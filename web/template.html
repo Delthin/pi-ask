@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>知识图谱 · pi-ask</title>
+<style>
+/*PI_ASK_CSS*/
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-name">pi-ask</span>
+    <span class="brand-sub">知识图谱</span>
+  </div>
+  <div class="search-wrap">
+    <label class="sr-only" for="search">搜索知识树</label>
+    <input id="search" type="search" placeholder="搜索标题或简介（按 / 聚焦）"
+      autocomplete="off" spellcheck="false">
+  </div>
+  <span class="gen-time" id="gen-time" hidden></span>
+</header>
+
+<main class="layout" id="layout">
+
+  <section class="pane list-pane" aria-label="知识树">
+    <div class="pane-head">
+      <h2 class="pane-title">知识树<span class="count" id="list-count"></span></h2>
+    </div>
+    <div class="list-scroll" id="list-scroll">
+      <ul class="node-tree" id="node-tree" role="tree" aria-label="知识树"></ul>
+      <p class="list-empty" id="list-empty" hidden></p>
+    </div>
+  </section>
+
+  <section class="pane graph-pane" aria-label="知识图谱">
+    <div class="pane-head">
+      <h2 class="pane-title">图谱</h2>
+      <div class="graph-tools">
+        <button type="button" class="tool" id="zoom-in" title="放大">＋</button>
+        <button type="button" class="tool" id="zoom-out" title="缩小">－</button>
+        <button type="button" class="tool" id="zoom-fit" title="适配全部节点">适配</button>
+        <button type="button" class="tool" id="relayout" title="清除记忆的位置，重新排布">重排</button>
+        <button type="button" class="tool tool-toggle" id="graph-toggle"
+          aria-expanded="true" aria-controls="graph">收起图谱</button>
+      </div>
+    </div>
+    <div class="graph-holder">
+      <svg id="graph" role="application"
+        aria-label="知识图谱画布：拖拽节点移动，拖动空白平移，滚轮或双指缩放，点击节点查看详情">
+        <defs>
+          <pattern id="dot-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+            <circle cx="1.6" cy="1.6" r="1.6"></circle>
+          </pattern>
+        </defs>
+        <g id="viewport">
+          <rect id="grid-rect" x="-20000" y="-20000" width="40000" height="40000"
+            fill="url(#dot-grid)" aria-hidden="true"></rect>
+          <g id="edge-layer" aria-hidden="true"></g>
+          <g id="node-layer"></g>
+          <g id="label-layer" aria-hidden="true"></g>
+        </g>
+      </svg>
+      <p class="graph-hint">连线为父子层级 · 拖动节点调整位置 · 空白处拖动平移 · 滚轮缩放 · 点击节点看详情</p>
+    </div>
+  </section>
+
+  <section class="pane detail-pane" aria-label="卡片详情">
+    <div class="pane-head">
+      <h2 class="pane-title">详情</h2>
+    </div>
+    <div class="detail-scroll">
+      <div id="detail"></div>
+    </div>
+  </section>
+
+</main>
+
+<section class="empty" id="empty" hidden aria-labelledby="empty-title">
+  <h1 id="empty-title">还没有知识卡片</h1>
+  <p class="lead">这个页面由 pi-ask 导出，用来离线浏览你的讨论归档。先在聊天里发起一次讨论，归档后刷新本页，这里就会出现知识树。</p>
+  <ol>
+    <li>在对话中发送 <code>/ask 问题</code>，例如 <code>/ask 如何做番茄炒蛋</code>，开始一次讨论；</li>
+    <li>讨论结束后发送 <code>/ask end</code>，一次归档可以生成或补充多张卡片，并按分组组织进知识树；</li>
+    <li>刷新本页，浏览分组、卡片和关联；也可用 <code>/ask graph</code> 重新生成本页。</li>
+  </ol>
+  <p class="note">本页完全离线可用：不联网、不加载任何外部资源，布局记忆只保存在你自己的浏览器里。</p>
+</section>
+
+<section class="fatal" id="fatal" hidden aria-labelledby="fatal-title">
+  <h1 id="fatal-title">无法显示图谱</h1>
+  <div class="box">
+    <p id="fatal-msg"></p>
+  </div>
+</section>
+
+<p class="sr-only" id="live" aria-live="polite"></p>
+
+<noscript>
+  <section class="fatal">
+    <h1>需要启用 JavaScript</h1>
+    <div class="box"><p>本页的图谱和卡片内容需要 JavaScript 才能显示，请在浏览器设置中启用后刷新。</p></div>
+  </section>
+</noscript>
+
+<script id="ask-data" type="application/json">__PI_ASK_DATA__</script>
+<script>
+/*PI_ASK_JS*/
+</script>
+
+</body>
+</html>

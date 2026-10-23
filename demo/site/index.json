@@ -1,0 +1,120 @@
+{
+  "version": 2,
+  "revision": 1,
+  "updatedAt": "2024-01-02T09:00:00.000Z",
+  "nodes": [
+    {
+      "id": "javascript",
+      "kind": "group",
+      "parentId": null,
+      "title": "JavaScript",
+      "summary": "演示知识树的根分组，收录语言基础相关的知识点。",
+      "file": null,
+      "createdAt": "2024-01-01T09:00:00.000Z",
+      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "recordIds": []
+    },
+    {
+      "id": "lexical-scope",
+      "kind": "knowledge",
+      "parentId": "javascript",
+      "title": "词法作用域",
+      "summary": "变量的可访问范围由代码书写位置决定，查找沿外层作用域逐级进行。",
+      "file": "cards/lexical-scope.md",
+      "createdAt": "2024-01-01T09:00:00.000Z",
+      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "recordIds": [
+        "demo-javascript"
+      ]
+    },
+    {
+      "id": "closure",
+      "kind": "knowledge",
+      "parentId": "lexical-scope",
+      "title": "闭包",
+      "summary": "函数与定义时的词法环境一起保存，外层函数返回后仍能访问其变量。",
+      "file": "cards/closure.md",
+      "createdAt": "2024-01-01T09:00:00.000Z",
+      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "recordIds": [
+        "demo-javascript"
+      ]
+    },
+    {
+      "id": "memory-management",
+      "kind": "group",
+      "parentId": "javascript",
+      "title": "内存管理",
+      "summary": "演示分组，整理对象生命周期和内存回收相关的知识点。",
+      "file": null,
+      "createdAt": "2024-01-01T09:00:00.000Z",
+      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "recordIds": []
+    },
+    {
+      "id": "garbage-collection",
+      "kind": "knowledge",
+      "parentId": "memory-management",
+      "title": "垃圾回收",
+      "summary": "从根对象出发标记可达对象，回收不可达对象占用的内存。",
+      "file": "cards/garbage-collection.md",
+      "createdAt": "2024-01-01T09:00:00.000Z",
+      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "recordIds": [
+        "demo-javascript"
+      ]
+    },
+    {
+      "id": "async-programming",
+      "kind": "group",
+      "parentId": "javascript",
+      "title": "异步编程",
+      "summary": "演示分组，整理异步任务组织和回调相关的知识点。",
+      "file": null,
+      "createdAt": "2024-01-01T09:00:00.000Z",
+      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "recordIds": []
+    },
+    {
+      "id": "promise",
+      "kind": "knowledge",
+      "parentId": "async-programming",
+      "title": "Promise",
+      "summary": "表示异步操作最终结果的对象，用 then 串联后续处理并统一传递错误。",
+      "file": "cards/promise.md",
+      "createdAt": "2024-01-01T09:00:00.000Z",
+      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "recordIds": [
+        "demo-javascript"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "closure",
+      "target": "garbage-collection",
+      "relation": "可达性",
+      "reason": "闭包持有外层变量的引用，这条引用链让变量保持可达，垃圾回收不会回收它们。"
+    },
+    {
+      "source": "promise",
+      "target": "closure",
+      "relation": "回调捕获",
+      "reason": "then 的回调会捕获定义处的变量，回调执行时读到的仍是这些变量。"
+    }
+  ],
+  "discussions": [
+    {
+      "id": "demo-javascript",
+      "file": "discussions/demo-javascript.md",
+      "createdAt": "2024-01-02T09:00:00.000Z",
+      "organizer": "预设示例",
+      "nodeIds": [
+        "lexical-scope",
+        "closure",
+        "garbage-collection",
+        "promise"
+      ]
+    }
+  ]
+}
