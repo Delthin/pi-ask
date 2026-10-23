@@ -1,163 +1,159 @@
 # pi-ask
 
-用 `/ask 问题` 开始一段讨论，用 `/ask end` 将其中的不同知识点拆成 Markdown 卡片。同一知识点追加到已有卡片，卡片自动归入最多三级的知识树，并建立语义关联。离线 HTML 提供树状导航、图谱浏览和卡片阅读。
+English · [简体中文](https://github.com/Delthin/pi-ask/blob/main/README.zh-CN.md)
 
-聊天使用当前模型。整理模型可以跟随聊天，也可以单独选择，复用 Pi 中已有的模型配置与认证。跟随模式在现有会话上下文末尾追加整理提示。
+pi-ask turns Pi discussions into local Markdown knowledge cards. Start a discussion with `/ask`, ask follow-up questions, then run `/ask end`. The extension separates the discussion into knowledge points, adds to existing cards when the topic matches, and organizes the cards into a tree with up to three levels. An offline HTML page lets you browse the tree, follow connections between topics, and read the cards.
 
-## 看看效果
+## Preview
 
-[打开交互 demo](https://delthin.github.io/pi-ask/) · [下载离线 demo](https://github.com/Delthin/pi-ask/releases/download/v0.2.0/pi-ask-demo.zip)
+[Open the interactive demo](https://delthin.github.io/pi-ask/) · [Download the offline demo](https://github.com/Delthin/pi-ask/releases/download/v0.2.0/pi-ask-demo.zip)
 
-[![pi-ask 示例：三级知识树、语义关联和 Markdown 卡片](https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png)](https://delthin.github.io/pi-ask/)
+[![pi-ask: a three-level knowledge tree, semantic connections, and a Markdown card](https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png)](https://delthin.github.io/pi-ask/)
 
-这组预设演示内容展示「JavaScript → 词法作用域 → 闭包」等三级路径。选择「闭包」可以看到它与垃圾回收、Promise 的语义关联，以及对应解释、代码和问答。左侧可折叠、搜索知识树，中央可拖拽和缩放，右侧可阅读卡片。demo 只展示本地浏览界面，不连接模型。
+The demo uses preset JavaScript notes in a Chinese-language interface. Select “闭包” (closures) to see the path through lexical scope, its connections to garbage collection and Promise callbacks, and an explanation with code and source Q&A. The left pane supports folding and search; the graph supports dragging and zooming; the right pane displays the selected card. The demo runs entirely in the browser.
 
-在 Pi 中，可以这样积累同类内容：
+## Install and create your first cards
 
-```text
-/ask 闭包是什么？先讲词法作用域，再给一个例子。
-它和垃圾回收有什么关系？Promise 回调也会用到闭包吗？
-/ask end
-```
-
-模型会根据本次讨论拆分知识点、补充已有卡片，再更新知识树；实际归档结果取决于讨论内容。
-
-## 安装和使用
-
-适用于提供 `modelRegistry.streamSimple()` 的 `@earendil-works/pi-coding-agent`，已按 1.2.0 的接口实现。Node.js 22.6 或更新版本。
-
-从 GitHub 安装当前发布版本：
+Use Node.js 22.6 or later and a Pi host that provides `modelRegistry.streamSimple()`. The extension was implemented against the APIs in `@earendil-works/pi-coding-agent` 1.2.0.
 
 ```sh
-pi install git:github.com/Delthin/pi-ask@v0.2.0
+pi install npm:@delthin/pi-ask
 ```
 
-本地开发也可以使用 `pi install /绝对路径/pi-ask`。
-
-重新启动 Pi，或在现有会话执行 `/reload`。然后：
+Restart Pi or run `/reload` in an existing session. Choose your archive directory and start a discussion:
 
 ```text
-/ask model
 /ask dir ~/journal/ask
-/ask JavaScript 的闭包是什么？
+/ask What is a JavaScript closure? Explain lexical scope first, then show an example. Write the cards in English.
 ```
 
-继续正常追问，也可以使用 `/ask 追问`。讨论结束后：
+After Pi replies, continue the conversation normally, or use `/ask` for follow-ups:
+
+```text
+How does this relate to garbage collection? Do Promise callbacks also use closures?
+```
+
+When you finish, archive the discussion and get the graph's file address:
 
 ```text
 /ask end
 /ask graph
 ```
 
-`/ask graph` 重新生成图谱并显示 `index.html` 的文件地址，用浏览器打开即可。页面支持折叠知识树、搜索、沿父级和子节点导航、查看语义关联、阅读和下载 Markdown，也可拖拽节点、平移缩放画布。位置只保存在浏览器中；知识点和关联由归档更新。
+Open the reported `index.html` address in your browser. A discussion can create several cards and extend existing ones in the same archive operation; the result depends on the topics actually covered. Each card contains the explanation, relevant examples and Q&A, plus links to the full discussion.
 
-一次讨论可以包含多个知识点。整理时保留每个知识点的完整解释、例子和相关问答，再逐一判断是新建还是补充已有卡片。
+The browser supports navigation through parents, children, and related topics, as well as Markdown reading and downloads. Dragged node positions are stored in the browser. Archiving maintains the knowledge tree and its connections; the page provides browsing and layout controls.
 
-| 命令 | 用途 |
+You can also install the tagged GitHub version with `pi install git:github.com/Delthin/pi-ask@v0.2.1`, or use `pi install /absolute/path/to/pi-ask` for local development.
+
+## Commands
+
+| Command | Action |
 | --- | --- |
-| `/ask 问题` | 开始记录；已有记录时继续追问 |
-| `/ask end` | 拆分本次知识点，合并或新建卡片，更新三级知识树、关联和 HTML |
-| `/ask cancel` | 取消记录，保留聊天内容 |
-| `/ask model` | 从 Pi 可用模型中选择默认整理模型 |
-| `/ask model current` | 将当前聊天模型固定为整理模型 |
-| `/ask model follow` | 跟随当前聊天模型，整理时复用会话上下文 |
-| `/ask model provider/model-id` | 直接指定 Pi 已配置的模型 |
-| `/ask dir /绝对路径` | 设置固定归档目录，也支持 `~/` |
-| `/ask status` | 查看本次记录、归档目录、整理模型和配置路径 |
-| `/ask graph` | 从本地卡片重新生成离线图谱 |
-| `/ask help` | 查看命令说明 |
-| `/ask -- 问题` | 问题以 `end`、`model` 等命令词开头时使用 |
+| `/ask question` | Start recording a discussion, or ask a follow-up in the active one. |
+| `/ask end` | Split the discussion into knowledge points, create or extend cards, and update the tree, connections, and HTML. |
+| `/ask cancel` | End recording and keep the chat history. |
+| `/ask model` | Choose a default organizer from the models available in Pi. |
+| `/ask model current` | Pin the current chat model as the organizer. |
+| `/ask model follow` | Follow the chat model and reuse the conversation context for organization. |
+| `/ask model provider/model-id` | Select an organizer already configured in Pi. |
+| `/ask dir /absolute/path` | Set the archive directory; `~/` is also supported. |
+| `/ask status` | Show recording status, the archive directory, organizer, and configuration path. |
+| `/ask graph` | Rebuild the offline graph and display its file address. |
+| `/ask help` | Show command help. |
+| `/ask -- question` | Ask a question beginning with a command word such as `end` or `model`. |
 
-归档时会等待当前回答结束。请等 `/ask` 的处理提示完成后再提交新消息；处理中提交的文字会退回编辑框，需要重新发送。
+Archiving waits for the current response to finish. Wait for an `/ask` operation to complete before submitting another message. Text submitted while it is processing is returned to the editor for you to resend.
 
-## 配置
+## Models and configuration
 
-默认配置文件为 `~/.pi/agent/pi-ask.json`；使用自定义 Pi agent 目录时跟随该目录。第一次修改模型或目录时自动写入。也可以手动编辑：
+Chat replies use Pi's current model. The organizer uses Pi's existing model configuration and authentication; select it with `/ask model`. The initial default is **follow**, which uses the chat model and appends the organizing instructions to the current conversation context.
+
+Configuration is saved when you first change a model or directory. The default file is `~/.pi/agent/pi-ask.json`; a custom Pi agent directory changes its location. `/ask status` shows the actual path. You can also edit the file directly:
 
 ```json
 {
   "version": 1,
   "directory": "~/journal/ask",
-  "model": {
-    "provider": "你的-provider",
-    "id": "你的-model-id"
-  },
+  "model": null,
   "timeoutMs": 120000
 }
 ```
 
-`model: null` 表示跟随当前聊天模型，也是初始默认值。跟随模式优先复用最近一次请求的消息、系统提示和工具声明，续接最后回答，并在末尾追加整理提示；重启后从当前会话投影恢复。整理提示以消息位置限定本次归档范围，不重复附上已有问答。若压缩等操作已使本次问答不完整，插件会提示改用原始问答快照整理。
+Set `model` to `{ "provider": "your-provider", "id": "your-model-id" }` to pin an organizer. `timeoutMs` applies to each model request and accepts values from 1000 to 600000 milliseconds.
 
-复用前缀有助于命中输入缓存，实际命中仍取决于模型服务、缓存有效期及其他扩展对请求的修改。未命中时，完整会话比单独发送本次问答占用更多输入。固定指定模型（包括 `/ask model current`）时，整理使用独立的本次问答上下文。
+The archive directory is fixed independently of Pi's working directory. Each discussion keeps the directory it started with. Changing `/ask dir` during a discussion sets the default for the next one; existing files stay in their original location.
 
-`timeoutMs` 是每次模型请求的超时，范围为 1000–600000 毫秒。模型标识须与 Pi 配置一致，认证由 Pi 管理。
+### Conversation reuse and caching
 
-归档目录与启动 Pi 的工作目录无关。一段讨论开始后，其归档目录就固定下来；中途运行 `/ask dir` 只影响下一段讨论，已有文件保留在原目录。
+In follow mode, the organizer reuses the most recent request's messages, system instructions, and tool definitions, includes the final answer, then adds the organizing instructions at the end. The appended prompt identifies the current discussion by message position, so it does not repeat the Q&A text. After a reload, the extension reconstructs the context from the session's effective message history. If compaction or other changes have removed part of the discussion, it reports the fallback and organizes a snapshot of the original Q&A instead.
 
-## 文件和整理方式
+Keeping the request prefix can help reuse the provider's input cache. Cache hits still depend on the provider, cache lifetime, and request changes made by other extensions. Without a cache hit, sending the full conversation costs more input tokens than sending only the current discussion. A pinned organizer, including `/ask model current`, uses a separate context containing the current discussion.
 
-默认目录结构：
+## Files and organization
+
+By default, pi-ask writes to `~/journal/ask/`:
 
 ```text
 ~/journal/ask/
-├── index.json          # 名称、简介、父级、卡片路径、讨论来源和语义关联
-├── index.html          # 内嵌全部卡片的离线知识树与图谱
+├── index.json          # Titles, summaries, hierarchy, card paths, sources, and connections
+├── index.html          # Offline tree and graph with all card contents embedded
 ├── cards/
-│   └── <知识点-ID>.md  # 知识整理、背景、相关问答和来源链接
+│   └── <node-id>.md    # Explanation, background, relevant Q&A, and source links
 └── discussions/
-    └── <讨论-ID>.md    # 一次讨论的完整原始问答
+    └── <record-id>.md  # The full original Q&A for one discussion
 ```
 
-开始时，插件根据问题检索名称和简介，提示可能已有的知识点。结束时，整理模型一次提炼多个知识点，再根据它们的名称、简介和已有索引，规划合并、层级归属及关联。同一次归档可以同时补充旧卡和创建新卡；原始讨论保存一份，各卡片按来源位置提取相关问答。合并时追加新内容，并更新索引和卡片头部的简介。
+At the start, the extension searches existing titles and summaries for a matching topic. At the end, the organizer extracts the knowledge points from the discussion. A separate request uses their titles and summaries together with the existing index to decide which cards to extend, where new nodes belong, and which topics are related. The extension appends new sections to matching cards and updates their summaries. It saves the full discussion once and copies the relevant Q&A into each card with source links.
 
-知识树最多一级、二级、三级，每个节点只有一个主要父级，知识卡片本身也可以有子节点。用于组织目录的分组节点只有名称和简介，有对应讨论后可成为知识卡片。父子关系表达主要归属；语义关联表达知识点之间的其他联系。
+Each node has one parent and can sit at the first, second, or third level. A knowledge card can have children. Group nodes provide a title and summary for a branch; they can become cards when a discussion covers their topic. Parent links express the main hierarchy, while semantic connections express other relationships. Extending a card preserves its parent.
 
-旧版索引会按根级知识点读取，保留原有 ID 和卡片正文；下一次归档写入新版索引。已有卡片补充时保留其父级。
+Version 1 indexes are read as root-level knowledge nodes, retaining their IDs and card contents. The next archive operation writes the newer index format.
 
-[知识卡片写作规则](src/prompts/knowledge-card.md) 从个人 Writing-DNA 中选取适用于学习与复习的要求，涵盖必要背景、整体与细节、机制与例子、正面说明、自然表达和事实依据，并区分应删除的防御性表述与必须保留的限制、风险和失败条件。整理默认使用中文；本次讨论明确指定产物语言时采用该语言。修改规则文件后，下次整理会读取新内容。检索和建联使用各自的短提示词；问答原文由程序另行保存。
+### Card content and language
 
-检索、合并判断和建联始终使用独立请求，历史输入仅包含 `id`、`title`、`summary`、`kind`、`parentId`。插件读取历史卡片正文用于本地追加与生成 HTML，正文不进入这些索引维护请求。
+The [card-writing prompt](https://github.com/Delthin/pi-ask/blob/main/src/prompts/knowledge-card.md) guides the organizer to explain the topic with the background, mechanisms, and examples needed for study. It preserves relevant qualifications and uncertainty. You can edit this prompt; the next organization request reads the updated file. The program saves the original Q&A separately from the model's explanation.
 
-整理阶段按上述模型配置使用当前会话或本次问答。跟随模式会包含当前会话中已有的背景、工具结果等上下文；这些内容不会因此全部写进卡片。整理调用只接收模型输出，不执行模型提出的工具调用。
+Cards default to Chinese. Explicitly request another output language during the discussion to change it, as in the English example above. The browsing interface and command messages are currently in Chinese.
 
-记录取自当前会话分支，从 `/ask` 起点到 `/ask end`。卡片保留回答模型名称、问答文字及可选背景摘要；工具输出和思考过程不进入卡片；中断、报错或达到长度限制的回答会保留已生成文字，并标注状态。图片以附件提示代替。背景摘要保留理解知识点所需的信息；固定模型模式下，依赖更早背景的问题需要在本次讨论中补充背景。
+Recording covers the current session branch from `/ask` to `/ask end`. Cards retain answer model names and visible Q&A text. Partial answers remain available with an interrupted, error, or length-limit label. Images are represented by an attachment notice; tool results and model thinking are excluded from the cards. A background summary can preserve context needed to understand the topic. With a pinned organizer, include any necessary earlier background in the current discussion.
 
-重新打开同一会话可继续未完成的记录。会话压缩不改变原始问答的归档范围；分支只归档该分支的问答。重复提交相同记录会去重。
+Reopening the same session resumes an unfinished recording. Compaction does not change the original Q&A available for archiving, and each branch archives its own messages. Repeating the same archive request is deduplicated.
 
-## 隐私与恢复
+## Data sent to models and local privacy
 
-卡片、索引和 HTML 都是本地明文文件。HTML 内嵌全部卡片，分享它会分享全部卡片内容。完整讨论源文件另存于 `discussions/`，来源链接依赖归档目录结构。页面使用本地资源，外部链接在点击时才打开；卡片中的 HTML 按文本显示，远程图片不加载。整理请求会将上述输入发送至你选择的模型服务。
+Retrieval, merge decisions, hierarchy assignment, and connection updates use isolated requests. Historical input to those requests is limited to `id`, `title`, `summary`, `kind`, and `parentId`. The extension reads existing card bodies locally to append content and generate HTML; it does not attach those bodies to index-maintenance requests.
 
-模型超时、不可用或返回格式错误时，记录仍然保留，可修改模型配置后重试 `/ask end`。进入归档写入阶段时会固定本次问答快照。已经归档但会话结束标记未写入时，重试会识别已有记录。待重试期间请先执行 `/ask end` 或 `/ask cancel`，再开始新的追问；取消保留已经落盘的卡片。
+The organizing request uses either the current conversation or the current discussion, according to the model setting. Follow mode can therefore include earlier background and tool results already present in the chat. That context is sent to the selected model service, but it is not all copied into cards. The organizer accepts model output without executing requested tool calls.
 
-一次归档的所有卡片、完整讨论和索引通过同一个 `.pi-ask-transaction.json` 事务保存，完成后自动移除。程序中断后，下次访问知识库会先恢复事务。断电时的持久性取决于操作系统和文件系统；Windows 下不执行目录同步。备份时应复制整个归档目录；若发现事务文件，请保留它。
+Cards, indexes, and HTML are local plaintext files. The HTML embeds every card: sharing it shares all card contents. Full discussion files are stored separately under `discussions/`, and their links depend on preserving the archive's folder structure. The page uses local resources, renders card HTML as text, and does not load remote images. External links open when clicked.
 
-`.pi-ask.lock` 防止多个 Pi 同时写入同一个目录。另一个进程正在写入时，稍后重试即可。进程异常退出遗留锁时，错误提示会给出锁路径；确认该目录没有活跃写入进程后，手动移除这个锁文件再重试。索引或卡片缺失、损坏时会报错，应先从备份恢复对应文件。
+## Recovery and backups
 
-## 开发
+If a model times out, is unavailable, or returns invalid output, the recording remains available. Adjust the organizer if needed and retry `/ask end`.
 
-使用和开发说明集中在本 README；`src/prompts/` 保存运行时提示词，知识卡片与运行产物写入配置目录。`demo/` 保存公开示例、生成脚本和预览截图。
+Before writing archive files, the extension freezes the discussion's Q&A snapshot. A retry detects cards already saved even if the session's completion marker was not written. While an archive is pending, use `/ask end` to retry or `/ask cancel` to end recording before asking more questions. Canceling retains any cards already saved.
 
-```sh
-npm install --legacy-peer-deps
-```
+One `.pi-ask-transaction.json` journal covers all cards, the full discussion, and the index in an archive operation. It is removed when the operation finishes. After a process interruption, the next library access recovers the pending transaction. Power-loss durability depends on the operating system and filesystem; directory synchronization is skipped on Windows. Back up the entire archive directory, including a transaction file if one is present.
 
-运行时由 Pi 提供 peer dependency。运行检查前，开发环境还需安装与宿主一致的 `@earendil-works/pi-coding-agent`，或将该包链接到宿主已安装的版本。
+A `.pi-ask.lock` file prevents concurrent writers. Retry later if another Pi process is writing. If a process exited abnormally and left a lock, the error reports its path: confirm that no process is still writing to that library, then remove the stale lock and retry. Missing or damaged indexes and cards require restoration from backup.
+
+## Development and publishing
+
+Install development dependencies with `npm install --legacy-peer-deps`. Before running checks, install or link the same `@earendil-works/pi-coding-agent` package used by your host; Pi supplies it at runtime.
 
 ```sh
 npm run typecheck
 npm test
 ```
 
-测试使用临时目录和模拟模型，不发送真实模型请求，也不读写个人知识库。
+Tests use temporary directories and mocked models. They make no real model requests and do not access a personal knowledge library.
 
-修改演示数据后运行 `npm run demo`，再用浏览器打开 `demo/site/index.html`。生成脚本只写入 `demo/site/` 中列出的示例文件。提交生成结果后，GitHub Pages 工作流会更新在线 demo。
+The `demo/` directory contains preset data, its generator, and the preview screenshot. Run `npm run demo` after changing the demo data, then open `demo/site/index.html`. The generator writes only the listed demo files. Committing the generated output updates the online demo through GitHub Pages.
 
-## 发布到 Pi 插件目录
+The npm package is published as **`@delthin/pi-ask`**. It includes `src/`, `web/`, and both READMEs. Demo files and development tests stay in the repository. The `pi-package` keyword makes the package discoverable by the [Pi package directory](https://pi.dev/packages); the manifest also provides the extension entry and preview image. See the [Pi package documentation](https://pi.dev/docs/latest/packages) for discovery and installation details.
 
-[Pi 插件目录](https://pi.dev/packages) 从 npm 发现带有 `pi-package` 关键词的包；[官方包文档](https://pi.dev/docs/latest/packages) 说明了这一机制。仓库已配置该关键词、扩展入口、公开发布及 `pi.image` 预览图。
-
-维护者首次发布时，在仓库根目录执行：
+For a new release, update the version in `package.json` and `package-lock.json`, run the relevant checks, and publish from the repository root using an npm account authorized for `@delthin`:
 
 ```sh
 npm login
@@ -166,6 +162,4 @@ npm publish --dry-run
 npm publish --access public
 ```
 
-npm 登录可能要求浏览器验证或双重认证。发布成功后，用户可以运行 `pi install npm:pi-ask`；目录出现该包还需要等待索引更新，GitHub Release 本身不会触发收录。若包名已被其他人占用，改用自己拥有的 npm scope，并同步修改安装命令。后续发布先递增 `package.json` 与锁文件中的版本，同一 npm 版本不能覆盖。
-
-npm 包只包含运行时代码、网页模板和本 README。演示页面、截图和开发用例保留在 GitHub，不进入插件安装包。
+npm may require browser verification or two-factor authentication. Published versions cannot be overwritten. Allow time for the Pi directory to refresh after publication.
