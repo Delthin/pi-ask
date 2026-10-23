@@ -6,11 +6,11 @@ pi-ask turns Pi discussions into local Markdown knowledge cards. Start a discuss
 
 ## Preview
 
-[Open the interactive demo](https://delthin.github.io/pi-ask/) · [Download the offline demo](https://github.com/Delthin/pi-ask/releases/download/v0.2.0/pi-ask-demo.zip)
+[Open the interactive demo](https://delthin.github.io/pi-ask/) · [Download the v0.2.0 offline demo](https://github.com/Delthin/pi-ask/releases/download/v0.2.0/pi-ask-demo.zip)
 
 [![pi-ask: a three-level knowledge tree, semantic connections, and a Markdown card](https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png)](https://delthin.github.io/pi-ask/)
 
-The demo uses preset JavaScript notes in a Chinese-language interface. Select “闭包” (closures) to see the path through lexical scope, its connections to garbage collection and Promise callbacks, and an explanation with code and source Q&A. The left pane supports folding and search; the graph supports dragging and zooming; the right pane displays the selected card. The demo runs entirely in the browser.
+The demo uses preset JavaScript notes in a Chinese-language interface. Select “闭包” (closures) to see the path through lexical scope and its connections to garbage collection and Promise callbacks. The right pane uses two archive batches to demonstrate a foundational explanation followed by an addition, with source Q&A that can be expanded for comparison. The left pane supports folding and search; the graph supports dragging and zooming. The demo runs entirely in the browser.
 
 ## Install and create your first cards
 
@@ -42,7 +42,15 @@ When you finish, archive the discussion and get the graph's file address:
 
 Open the reported `index.html` address in your browser. A discussion can create several cards and extend existing ones in the same archive operation; the result depends on the topics actually covered. Each card contains the explanation, relevant examples and Q&A, plus links to the full discussion.
 
-The browser supports navigation through parents, children, and related topics, as well as Markdown reading and downloads. Dragged node positions are stored in the browser. Archiving maintains the knowledge tree and its connections; the page provides browsing and layout controls.
+The browser supports navigation through parents, children, and related topics, as well as Markdown reading and downloads. Card explanations are grouped by archive batch, with source Q&A collapsed until needed. After several additions, the record navigation lets you jump to a particular batch or the latest addition. Dragged node positions are stored in the browser. Archiving maintains the knowledge tree and its connections; the page provides browsing and layout controls.
+
+### Read a card that has grown over time
+
+The reading view keeps explanations in their original append order. Its record navigation shows each batch's date and knowledge-point titles. Use “最近补充” (latest addition) to reach new material, or expand a batch's source Q&A to inspect the questions, answer models, interruption labels, and source links. The latest batch may only add a detail; foundational explanations remain in earlier records.
+
+“完整 Markdown” (full Markdown) displays the entire card, and downloads always preserve the full original file. Older or manually edited cards whose batch boundaries cannot be identified reliably are shown in full. Reading sections are derived locally while generating HTML, without model calls or changes to cards or the index. They help with reading and checking sources; comparing repeated or conflicting statements still requires reading the original material.
+
+After upgrading, run `/ask graph` and refresh the existing HTML page to use the new reading view.
 
 You can also install the tagged GitHub version with `pi install git:github.com/Delthin/pi-ask@v0.2.1`, or use `pi install /absolute/path/to/pi-ask` for local development.
 
@@ -126,7 +134,7 @@ Retrieval, merge decisions, hierarchy assignment, and connection updates use iso
 
 The organizing request uses either the current conversation or the current discussion, according to the model setting. Follow mode can therefore include earlier background and tool results already present in the chat. That context is sent to the selected model service, but it is not all copied into cards. The organizer accepts model output without executing requested tool calls.
 
-Cards, indexes, and HTML are local plaintext files. The HTML embeds every card: sharing it shares all card contents. Full discussion files are stored separately under `discussions/`, and their links depend on preserving the archive's folder structure. The page uses local resources, renders card HTML as text, and does not load remote images. External links open when clicked.
+Cards, indexes, and HTML are local plaintext files. The HTML embeds every card: sharing it shares all card contents, including collapsed source Q&A. Full discussion files are stored separately under `discussions/`, and their links depend on preserving the archive's folder structure. The page uses local resources, renders card HTML as text, and does not load remote images. External links open when clicked.
 
 ## Recovery and backups
 

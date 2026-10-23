@@ -1,6 +1,6 @@
 {
   "name": "@delthin/pi-ask",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Turn Pi conversations into local Markdown knowledge cards and an offline graph.",
   "type": "module",
   "keywords": ["pi-package", "knowledge-base", "knowledge-graph", "markdown"],

@@ -2,12 +2,15 @@ import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { atomicWrite } from "./files.ts";
+import { cardReading } from "./reading.ts";
 import type { GraphData, KnowledgeIndex } from "./types.ts";
 
 export async function renderGraph(directory: string, index: KnowledgeIndex): Promise<void> {
-  const nodes = await Promise.all(index.nodes.map(async ({ recordIds, ...node }) => ({
-    ...node, entryCount: recordIds.length, markdown: node.file === null ? "" : await readFile(join(directory, node.file), "utf8"),
-  })));
+  const nodes = await Promise.all(index.nodes.map(async ({ recordIds, ...node }) => {
+    const markdown = node.file === null ? "" : await readFile(join(directory, node.file), "utf8");
+    const reading = node.file === null ? undefined : cardReading(markdown, recordIds);
+    return { ...node, entryCount: recordIds.length, markdown, ...(reading ? { reading } : {}) };
+  }));
   const data: GraphData = {
     version: 2, libraryId: createHash("sha256").update(resolve(directory)).digest("hex").slice(0, 20),
     generatedAt: new Date().toISOString(), nodes, edges: index.edges,

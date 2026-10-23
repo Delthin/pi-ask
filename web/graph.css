@@ -634,6 +634,229 @@ mark {
 
 .detail-actions {
   margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+/* ---------- 分批阅读：模式切换 / 补充记录导航 / 批次 / 原文折叠 ---------- */
+
+.mode-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.mode-btn {
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mode-btn:hover {
+  color: var(--ink);
+}
+
+.mode-btn.is-active {
+  background: var(--surface);
+  color: var(--green-deep);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(33, 50, 43, 0.12);
+}
+
+.record-nav {
+  position: relative;
+  margin: 4px 0 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.record-nav-label {
+  min-height: 30px;
+  padding-right: 100px;
+  line-height: 30px;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.record-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.record-nav-item:hover {
+  border-color: var(--line-2);
+  background: var(--surface);
+}
+
+.record-nav-item:active {
+  transform: scale(0.98);
+}
+
+.record-nav-when {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  color: var(--green-deep);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.record-nav-what {
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-nav-latest {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  width: auto;
+  min-height: 30px;
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.record-article {
+  padding: 14px 0 4px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 16px;
+  outline: none;
+}
+
+.record-article:first-child {
+  border-top: none;
+  padding-top: 2px;
+}
+
+.record-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 6px;
+}
+
+.record-badge {
+  display: inline-block;
+  padding: 1px 8px 2px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.record-meta {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+@keyframes record-flash {
+  from {
+    background-color: var(--green-soft);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.record-article.is-flash {
+  animation: record-flash 1.2s ease-out;
+  border-radius: 10px;
+}
+
+.transcript {
+  margin: 12px 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.transcript > summary {
+  padding: 9px 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+  list-style-position: inside;
+}
+
+.transcript > summary:hover {
+  color: var(--ink);
+}
+
+.transcript[open] > summary {
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+
+.transcript .md {
+  padding: 4px 12px 10px;
+}
+
+.merge-note {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.md h1,
+.md h2,
+.md h3,
+.md h4,
+.md h5,
+.md h6 {
+  scroll-margin-top: 16px;
 }
 
 .button-primary {
@@ -1179,6 +1402,24 @@ mark {
 @media (max-width: 560px) {
   .brand-sub {
     display: none;
+  }
+
+  .record-nav-item {
+    max-width: 100%;
+  }
+}
+
+/* 窄屏下 sticky 顶栏遮挡目标，加大锚点滚动预留 */
+
+@media (max-width: 1079.98px) {
+  .record-article,
+  .md h1,
+  .md h2,
+  .md h3,
+  .md h4,
+  .md h5,
+  .md h6 {
+    scroll-margin-top: 120px;
   }
 }
 

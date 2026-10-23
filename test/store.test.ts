@@ -159,6 +159,13 @@ test("同批 notes 合并：record 只记一次，问答按来源去重归属，
   assert.match(transcript, /p\/m/); assert.match(transcript, /p\/second/); assert.match(transcript, /1970-01-01T00:00:00.001Z/);
   assert.doesNotMatch(transcript, /甲整理|甲补充整理|乙整理/);
   assert.deepEqual(await readdir(join(root, "discussions")), ["sources.md"]);
+  const { data } = await graph(root);
+  const readings = result.nodes.map(node => data.nodes.find((entry: { id: string }) => entry.id === node.id).reading);
+  assert.deepEqual(readings.map(reading => reading.records[0].id), ["sources", "sources"]);
+  assert.match(readings[0].records[0].content, /甲整理/);
+  assert.doesNotMatch(readings[0].records[0].transcript, /独立问题乙|独立原文乙/);
+  assert.match(readings[1].records[0].transcript, /独立原文乙/);
+  assert.doesNotMatch(readings[1].records[0].transcript, /问 闭包|原始回答/);
 });
 
 test("分组命中后提升为知识卡，ID、父级和已有子节点保持", async t => {

@@ -8,7 +8,7 @@
  *                                 顶栏说明和 libraryId/generatedAt，其余仍是产品页面
  * - demo/site/index.json          固定索引
  * - demo/site/cards/<id>.md       4 张知识卡片
- * - demo/site/discussions/demo-javascript.md  示例讨论原文
+ * - demo/site/discussions/demo-javascript.md、demo-closure-capture.md  两次示例讨论原文
  *
  * 节点、父子关系、语义关联、卡片正文、讨论问答和日期都写在本文件里，输出可重复生成。
  * 全部内容为预设的公开示例，不来自真实用户会话，也未经过 /ask 模型归档流程。
@@ -26,6 +26,19 @@ const LIBRARY_ID = "pi-ask-public-demo-v1";
 const CREATED_AT = "2024-01-01T09:00:00.000Z";
 const UPDATED_AT = "2024-01-02T09:00:00.000Z";
 const DEMO_NOTE = "> 预设演示内容，不来自用户会话。";
+const SUPPLEMENT_ID = "demo-closure-capture";
+const SUPPLEMENT_AT = "2024-01-03T09:00:00.000Z";
+const SUPPLEMENT_TITLE = "闭包读取的是变量，不是创建时的快照";
+const SUPPLEMENT_BODY = `闭包保留对词法环境中变量的访问。外层代码修改同一个变量后，闭包再次读取时会得到修改后的值：
+
+\`\`\`js
+let count = 0;
+const read = () => count;
+count = 2;
+console.log(read()); // 2
+\`\`\`
+
+如果另一个变量保存了预先计算好的结果，读取的仍然是那个结果；它不会因为原变量改变而自动重新计算。这次补充解释变量捕获，上次记录中的闭包定义和计数器示例仍然适用。`;
 
 interface DemoNode {
   id: string;
@@ -212,6 +225,11 @@ const MESSAGES: { at: string; role: "user" | "assistant"; text: string }[] = [
   },
 ];
 
+const SUPPLEMENT_MESSAGES: typeof MESSAGES = [
+  { at: "2024-01-03T08:58:00.000Z", role: "user", text: "闭包记住的是创建时的值吗？变量后来变了会怎样？" },
+  { at: "2024-01-03T08:58:30.000Z", role: "assistant", text: "闭包读取的是对应词法环境中的变量。同一个变量被修改后，后续读取会得到新值；已经保存在其他变量里的计算结果不会因此自动更新。" },
+];
+
 const EDGES: KnowledgeEdge[] = [
   {
     source: "closure",
@@ -234,19 +252,25 @@ function messageText(message: (typeof MESSAGES)[number]): string {
   return `### ${heading} · ${message.at}\n\n${message.text}`;
 }
 
-function discussionText(): string {
-  const anchors = MESSAGES.map(
+function discussionText(recordId = RECORD_ID, messages = MESSAGES, at = UPDATED_AT): string {
+  const anchors = messages.map(
     (message, index) => `<a id="message-${index}"></a>\n\n${messageText(message)}`,
   ).join("\n\n");
-  return `# 讨论 ${RECORD_ID}\n\n演示讨论：以下问答为预设示例，不来自真实用户会话。\n\n归档时间：${UPDATED_AT}\n内容来源：预设示例\n\n${anchors}\n`;
+  return `# 讨论 ${recordId}\n\n演示讨论：以下问答为预设示例，不来自真实用户会话。\n\n归档时间：${at}\n内容来源：预设示例\n\n${anchors}\n`;
 }
 
 function cardText(node: DemoNode): string {
-  const frontmatter = `---\nid: ${JSON.stringify(node.id)}\ntitle: ${JSON.stringify(node.title)}\nsummary: ${JSON.stringify(node.summary)}\ncreated: ${JSON.stringify(CREATED_AT)}\nupdated: ${JSON.stringify(UPDATED_AT)}\n---\n\n`;
+  const updatedAt = node.id === "closure" ? SUPPLEMENT_AT : UPDATED_AT;
+  const frontmatter = `---\nid: ${JSON.stringify(node.id)}\ntitle: ${JSON.stringify(node.title)}\nsummary: ${JSON.stringify(node.summary)}\ncreated: ${JSON.stringify(CREATED_AT)}\nupdated: ${JSON.stringify(updatedAt)}\n---\n\n`;
   const quoted = (node.messages ?? [])
     .map(index => `[原始消息 message-${index}](../discussions/${RECORD_ID}.md#message-${index})\n\n${messageText(MESSAGES[index]!)}`)
     .join("\n\n");
-  return `${frontmatter}# ${node.title}\n\n${DEMO_NOTE}\n\n${node.body ?? ""}\n\n---\n\n## ${UPDATED_AT}\n\n<!-- record:${RECORD_ID} -->\n内容来源：预设示例\n\n### 相关原始问答\n\n${quoted}\n`;
+  let content = `${frontmatter}# ${node.title}\n\n${DEMO_NOTE}\n\n---\n\n## ${UPDATED_AT}\n\n<!-- record:${RECORD_ID} -->\n整理模型：预设示例（未调用模型）\n\n### ${node.title}\n\n#### 知识整理\n\n${node.body ?? ""}\n\n### 相关原始问答\n\n${quoted}\n`;
+  if (node.id === "closure") {
+    const supplement = SUPPLEMENT_MESSAGES.map((message, i) => `[原始消息 message-${i}](../discussions/${SUPPLEMENT_ID}.md#message-${i})\n\n${messageText(message)}`).join("\n\n");
+    content += `\n---\n\n## ${SUPPLEMENT_AT}\n\n<!-- record:${SUPPLEMENT_ID} -->\n整理模型：预设示例（未调用模型）\n\n### ${SUPPLEMENT_TITLE}\n\n#### 知识整理\n\n${SUPPLEMENT_BODY}\n\n### 相关原始问答\n\n${supplement}\n`;
+  }
+  return content;
 }
 
 function buildIndex(): KnowledgeIndex {
@@ -258,13 +282,13 @@ function buildIndex(): KnowledgeIndex {
     summary: node.summary,
     file: node.kind === "knowledge" ? cardFile(node.id) : null,
     createdAt: CREATED_AT,
-    updatedAt: UPDATED_AT,
-    recordIds: node.kind === "knowledge" ? [RECORD_ID] : [],
+    updatedAt: node.id === "closure" ? SUPPLEMENT_AT : UPDATED_AT,
+    recordIds: node.kind === "knowledge" ? node.id === "closure" ? [RECORD_ID, SUPPLEMENT_ID] : [RECORD_ID] : [],
   }));
   return {
     version: 2,
-    revision: 1,
-    updatedAt: UPDATED_AT,
+    revision: 2,
+    updatedAt: SUPPLEMENT_AT,
     nodes,
     edges: EDGES,
     discussions: [{
@@ -273,6 +297,9 @@ function buildIndex(): KnowledgeIndex {
       createdAt: UPDATED_AT,
       organizer: "预设示例",
       nodeIds: DEMO_NODES.filter(node => node.kind === "knowledge").map(node => node.id),
+    }, {
+      id: SUPPLEMENT_ID, file: `discussions/${SUPPLEMENT_ID}.md`, createdAt: SUPPLEMENT_AT,
+      organizer: "预设示例", nodeIds: ["closure"],
     }],
   };
 }
@@ -284,7 +311,7 @@ async function brandAsDemo(htmlPath: string): Promise<void> {
     [/<title>知识图谱 · pi-ask<\/title>/, "<title>知识图谱示例 · pi-ask</title>"],
     [/<span class="brand-sub">知识图谱<\/span>/, '<span class="brand-sub">知识图谱示例</span>'],
     [/"libraryId":"[0-9a-f]{20}"/, `"libraryId":${JSON.stringify(LIBRARY_ID)}`],
-    [/"generatedAt":"[^"]*"/, `"generatedAt":${JSON.stringify(UPDATED_AT)}`],
+    [/"generatedAt":"[^"]*"/, `"generatedAt":${JSON.stringify(SUPPLEMENT_AT)}`],
   ];
   for (const [pattern, replacement] of swaps) {
     const matches = html.match(new RegExp(pattern.source, "g"));
@@ -304,6 +331,7 @@ async function main(): Promise<void> {
     await writeFile(join(OUT, cardFile(node.id)), cardText(node), "utf8");
   }
   await writeFile(join(OUT, `discussions/${RECORD_ID}.md`), discussionText(), "utf8");
+  await writeFile(join(OUT, `discussions/${SUPPLEMENT_ID}.md`), discussionText(SUPPLEMENT_ID, SUPPLEMENT_MESSAGES, SUPPLEMENT_AT), "utf8");
   await writeFile(join(OUT, "index.json"), JSON.stringify(index, null, 2) + "\n", "utf8");
 
   // renderGraph 读取 cards/*.md 并写入 index.html。

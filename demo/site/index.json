@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "revision": 1,
-  "updatedAt": "2024-01-02T09:00:00.000Z",
+  "revision": 2,
+  "updatedAt": "2024-01-03T09:00:00.000Z",
   "nodes": [
     {
       "id": "javascript",
@@ -35,9 +35,10 @@
       "summary": "函数与定义时的词法环境一起保存，外层函数返回后仍能访问其变量。",
       "file": "cards/closure.md",
       "createdAt": "2024-01-01T09:00:00.000Z",
-      "updatedAt": "2024-01-02T09:00:00.000Z",
+      "updatedAt": "2024-01-03T09:00:00.000Z",
       "recordIds": [
-        "demo-javascript"
+        "demo-javascript",
+        "demo-closure-capture"
       ]
     },
     {
@@ -114,6 +115,15 @@
         "closure",
         "garbage-collection",
         "promise"
+      ]
+    },
+    {
+      "id": "demo-closure-capture",
+      "file": "discussions/demo-closure-capture.md",
+      "createdAt": "2024-01-03T09:00:00.000Z",
+      "organizer": "预设示例",
+      "nodeIds": [
+        "closure"
       ]
     }
   ]

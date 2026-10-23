@@ -8,6 +8,38 @@ interface Point {
   y: number;
 }
 
+interface ReadingRecord {
+  id: string;
+  archivedAt: string;
+  organizer: string;
+  titles: string[];
+  content: string;
+  transcript: string;
+}
+
+interface CardReading {
+  introduction: string;
+  records: ReadingRecord[];
+}
+
+interface MdBlock {
+  type: string;
+  text?: string;
+  level?: number;
+  children?: MdBlock[];
+  items?: Array<{ blocks: MdBlock[] }>;
+  id?: string;
+}
+
+interface ReadingDoc {
+  kind: "intro" | "content" | "transcript";
+  ns: string;
+  blocks: MdBlock[];
+  index: number;
+  record: ReadingRecord | null;
+  anchorMap: Map<string, string>;
+}
+
 interface Hierarchy {
   parentOf: Map<string, string | null>;
   childrenOf: Map<string, string[]>;
@@ -32,11 +64,34 @@ interface WebHelpers {
     sizeOf: (id: string) => { w: number; h: number },
     opts?: { siblingGap?: number; levelGap?: number; rootGap?: number }
   ): Map<string, Point>;
+  applySkipTitle(blocks: MdBlock[], skipTitle?: string): MdBlock[];
+  prepareHeadingIds(
+    blocks: MdBlock[],
+    ns: string,
+    usedIds: Record<string, boolean>,
+    anchorMap?: Map<string, string>
+  ): void;
+  resolveAnchor(fragment: string, anchorMap: Map<string, string> | null): string | null;
+  normalizeReading(raw: unknown): CardReading | null;
+  buildReadingViews(node: {
+    title?: string;
+    reading?: unknown;
+  } | null): { reading: CardReading | null; docs: ReadingDoc[]; anchorMap: Map<string, string> | null };
 }
 
 const module = { exports: {} as WebHelpers };
 runInNewContext(await readFile(new URL("../web/graph.js", import.meta.url), "utf8"), { module });
-const { safeHref, buildHierarchy, treeQuery, computeTreeLayout } = module.exports;
+const {
+  safeHref,
+  buildHierarchy,
+  treeQuery,
+  computeTreeLayout,
+  applySkipTitle,
+  prepareHeadingIds,
+  resolveAnchor,
+  normalizeReading,
+  buildReadingViews,
+} = module.exports;
 
 test("Markdown 链接仅允许网页、同页锚点和卡片路径", () => {
   for (const value of [
@@ -164,4 +219,135 @@ test("树布局：空图返回空，直接成环不挂起", () => {
   const pos = computeTreeLayout(h.roots, h.childrenOf, () => ({ w: 100, h: 40 }));
   assert.equal(pos.size, 2);
   for (const p of pos.values()) assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y));
+});
+
+function record(over: Partial<ReadingRecord> = {}): ReadingRecord {
+  return {
+    id: "rec-1",
+    archivedAt: "2024-01-03T09:00:00.000Z",
+    organizer: "organizer",
+    titles: ["标题"],
+    content: "### 标题\n\n正文",
+    transcript: "原文",
+    ...over,
+  };
+}
+
+test("normalizeReading：合法结构通过并过滤空标题，异常结构返回 null 回退原文", () => {
+  const raw = {
+    introduction: "前言",
+    records: [record({ titles: ["", "有效标题"] }), record({ id: "rec-2" })],
+  };
+  const ok = normalizeReading(raw);
+  assert.ok(ok);
+  assert.equal(ok.records.length, 2);
+  /* vm 跨 realm 数组：展开为宿主数组再比较 */
+  assert.deepEqual([...ok.records[0].titles], ["有效标题"]);
+  /* 无效输入一律 null：调用方回退到完整 Markdown 渲染 */
+  assert.equal(normalizeReading(null), null);
+  assert.equal(normalizeReading("text"), null);
+  assert.equal(normalizeReading({ introduction: "x", records: [] }), null);
+  assert.equal(normalizeReading({ introduction: 1, records: [record()] }), null);
+  assert.equal(normalizeReading({ introduction: "x", records: [record({ content: "  " })] }), null);
+  assert.equal(normalizeReading({ introduction: "x", records: [{ ...record(), titles: "no" }] }), null);
+  assert.equal(normalizeReading({ introduction: "x", records: [{ ...record(), archivedAt: 5 }] }), null);
+  /* 未知额外字段不影响识别（保守忽略，不回退） */
+  const extra = normalizeReading({ introduction: "x", records: [{ ...record(), extra: 1 }] });
+  assert.ok(extra);
+  /* 允许缺失可选字段（transcript/titles/organizer 为空） */
+  const sparse = normalizeReading({ introduction: "", records: [{ id: "r", archivedAt: "", organizer: "", titles: [], content: "正文" }] });
+  assert.ok(sparse);
+  assert.equal(sparse.records[0].transcript, "");
+});
+
+test("applySkipTitle：仅当首块是与卡片同名的标题时跳过", () => {
+  const heading = (text: string): MdBlock => ({ type: "heading", level: 1, text });
+  const para: MdBlock = { type: "paragraph", text: "正文" };
+  assert.equal(applySkipTitle([heading("闭包"), para], "闭包").length, 1);
+  assert.equal(applySkipTitle([heading("闭包"), para], "闭包 ").length, 1);
+  assert.equal(applySkipTitle([heading("其他"), para], "闭包").length, 2);
+  assert.equal(applySkipTitle([heading("闭包")], undefined).length, 1);
+  assert.equal(applySkipTitle([para], "闭包").length, 1);
+});
+
+test("buildReadingViews：批次标题 ID 命名空间隔离，重复标题加后缀，锚点表先到先得", () => {
+  const node = {
+    title: "闭包",
+    reading: {
+      introduction: "---\nid: x\n---\n\n# 闭包\n\n> 引言",
+      records: [
+        record({
+          id: "rec-1",
+          titles: ["首批"],
+          content: "## 同名标题\n\n## 同名标题\n\n正文一",
+          transcript: "## 同名标题\n\n原文一",
+        }),
+        record({
+          id: "rec-2",
+          titles: ["次批"],
+          content: "## 同名标题\n\n正文二",
+          transcript: "",
+        }),
+      ],
+    },
+  };
+  const views = buildReadingViews(node);
+  assert.ok(views.reading);
+  assert.equal(views.reading.records.length, 2);
+  /* 前言（跳过同名 H1、去 frontmatter）+ 两批正文 + 一批原文；第二批无 transcript 不建文档 */
+  assert.deepEqual([...views.docs.map((d) => d.kind)], ["intro", "content", "transcript", "content"]);
+  assert.deepEqual([...views.docs.map((d) => d.ns)], ["intro", "r1", "r1t", "r2"]);
+  /* 同一批内重复标题加 -2 后缀；不同批命名空间隔离不冲突 */
+  const first = views.docs[1].blocks[0];
+  const dup = views.docs[1].blocks[1];
+  const second = views.docs[3].blocks[0];
+  const transcriptHeading = views.docs[2].blocks[0];
+  assert.equal(first.id, "r1-同名标题");
+  assert.equal(dup.id, "r1-同名标题-2");
+  assert.equal(second.id, "r2-同名标题");
+  assert.equal(transcriptHeading.id, "r1t-同名标题");
+  /* 局部表登记原始 slug → 本文档首个 ID */
+  assert.equal(views.docs[1].anchorMap.get("同名标题"), "r1-同名标题");
+  assert.equal(resolveAnchor("同名标题-2", views.docs[1].anchorMap), "r1-同名标题-2", "重名标题的编号锚点可直接访问");
+  /* 全局表先到先得：指向第一批 */
+  assert.equal(views.anchorMap!.get("同名标题"), "r1-同名标题");
+  /* 无 reading / 无效 reading：不输出任何文档，调用方回退完整 Markdown */
+  assert.equal(buildReadingViews(null).docs.length, 0);
+  assert.equal(buildReadingViews({ title: "x" }).docs.length, 0);
+  assert.equal(buildReadingViews({ title: "x", reading: { records: [] } }).docs.length, 0);
+});
+
+test("buildReadingViews：前言只剩 frontmatter 与同名标题时不产生空文档", () => {
+  const views = buildReadingViews({
+    title: "闭包",
+    reading: { introduction: "---\nid: closure\n---\n\n# 闭包", records: [record()] },
+  });
+  assert.deepEqual([...views.docs.map((d) => d.kind)], ["content", "transcript"]);
+});
+
+test("resolveAnchor：精确命中、slug 回退、未命中返回 null", () => {
+  const map = new Map([["闭包-定义", "r1-闭包-定义"]]);
+  assert.equal(resolveAnchor("闭包-定义", map), "r1-闭包-定义");
+  assert.equal(resolveAnchor("闭包 定义", map), "r1-闭包-定义");
+  assert.equal(resolveAnchor("不存在", map), null);
+  assert.equal(resolveAnchor("闭包-定义", null), null);
+  assert.equal(resolveAnchor("", map), null);
+});
+
+test("prepareHeadingIds：引用与列表内的标题同样登记，usedIds 跨调用共享去重", () => {
+  const blocks: MdBlock[] = [
+    { type: "quote", children: [{ type: "heading", level: 3, text: "引用内标题" }] },
+    {
+      type: "list",
+      items: [{ blocks: [{ type: "heading", level: 3, text: "列表内标题" }] }],
+    },
+  ];
+  const used: Record<string, boolean> = {};
+  const map = new Map<string, string>();
+  prepareHeadingIds(blocks, "ns", used, map);
+  assert.equal(map.get("引用内标题"), "ns-引用内标题");
+  assert.equal(map.get("列表内标题"), "ns-列表内标题");
+  const again: MdBlock[] = [{ type: "heading", level: 3, text: "引用内标题" }];
+  prepareHeadingIds(again, "ns", used, new Map());
+  assert.equal(again[0].id, "ns-引用内标题-2");
 });

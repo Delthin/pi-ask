@@ -33,24 +33,16 @@
     };
   }
 
-  function formatDate(iso) {
+  function formatDate(iso, dateOnly) {
     if (!iso) return '';
     var d = new Date(iso);
     if (isNaN(d.getTime())) return '';
     function p(n) {
       return (n < 10 ? '0' : '') + n;
     }
-    return (
-      d.getFullYear() +
-      '-' +
-      p(d.getMonth() + 1) +
-      '-' +
-      p(d.getDate()) +
-      ' ' +
-      p(d.getHours()) +
-      ':' +
-      p(d.getMinutes())
-    );
+    var day = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    if (dateOnly) return day;
+    return day + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
   /* 链接安全判定：只放行 http(s) 外链、同页锚点和卡片路径。
@@ -520,40 +512,164 @@
     return textOfTokens(toks).trim();
   }
 
+  /* ---------- 阅读投影（纯函数：批次校验 / 标题 ID 命名空间 / 锚点解析） ---------- */
+
+  /** 与文档首部标题同名时跳过该标题（卡片正文以 H1 开头，详情栏已单独展示标题）。 */
+  function applySkipTitle(blocks, skipTitle) {
+    var list = Array.isArray(blocks) ? blocks : [];
+    if (!skipTitle || !list.length || list[0].type !== 'heading') return list;
+    var plain = inlinePlain(list[0].text);
+    var target = String(skipTitle).trim();
+    if (plain === target || plain.toLowerCase() === target.toLowerCase()) return list.slice(1);
+    return list;
+  }
+
+  /**
+   * 渲染前为标题块分配 DOM ID：同一文档内重名标题追加 -2 后缀，与旧渲染一致；
+   * 命名空间（ns）隔离多个批次的标题 ID，并把「原始 slug → 最终 ID」登记进
+   * anchorMap（先到先得），供正文里的 #锚点 链接解析。
+   */
+  function prepareHeadingIds(blocks, ns, usedIds, anchorMap) {
+    var list = Array.isArray(blocks) ? blocks : [];
+    var prefix = ns ? ns + '-' : '';
+    list.forEach(function (b) {
+      if (b.type === 'heading') {
+        var base = slugify(inlinePlain(b.text));
+        var id = base;
+        var n = 2;
+        while (usedIds[id]) id = base + '-' + n++;
+        usedIds[id] = true;
+        b.id = prefix + id;
+        if (anchorMap && !anchorMap.has(base)) anchorMap.set(base, b.id);
+        if (anchorMap && !anchorMap.has(id)) anchorMap.set(id, b.id);
+      } else if (b.type === 'quote') {
+        prepareHeadingIds(b.children, ns, usedIds, anchorMap);
+      } else if (b.type === 'list') {
+        (b.items || []).forEach(function (item) {
+          prepareHeadingIds(item.blocks || [], ns, usedIds, anchorMap);
+        });
+      }
+    });
+  }
+
+  /** 锚点解析：先精确匹配，再按 slug 规则匹配；未命中返回 null（调用方转为纯文本，不产生错误导航）。 */
+  function resolveAnchor(fragment, anchorMap) {
+    if (!anchorMap || !fragment) return null;
+    var f = String(fragment);
+    if (anchorMap.has(f)) return anchorMap.get(f);
+    var slug = slugify(decodeEntities(f));
+    return anchorMap.has(slug) ? anchorMap.get(slug) : null;
+  }
+
+  /**
+   * 校验导出时派生的 reading 字段：结构不完整或没有批次时返回 null，
+   * 调用方回退到完整 Markdown 渲染，正文不会丢失。
+   */
+  function normalizeReading(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    var introduction = raw.introduction == null ? '' : raw.introduction;
+    if (typeof introduction !== 'string') return null;
+    if (!Array.isArray(raw.records) || !raw.records.length) return null;
+    var records = [];
+    for (var i = 0; i < raw.records.length; i++) {
+      var r = raw.records[i];
+      if (!r || typeof r !== 'object' || Array.isArray(r)) return null;
+      var rec = {
+        id: r.id == null ? '' : r.id,
+        archivedAt: r.archivedAt == null ? '' : r.archivedAt,
+        organizer: r.organizer == null ? '' : r.organizer,
+        titles: [],
+        content: r.content,
+        transcript: r.transcript == null ? '' : r.transcript,
+      };
+      if (
+        typeof rec.id !== 'string' ||
+        typeof rec.archivedAt !== 'string' ||
+        typeof rec.organizer !== 'string' ||
+        typeof rec.transcript !== 'string'
+      ) {
+        return null;
+      }
+      if (typeof rec.content !== 'string' || !rec.content.trim()) return null;
+      var titles = r.titles == null ? [] : r.titles;
+      if (!Array.isArray(titles)) return null;
+      for (var j = 0; j < titles.length; j++) {
+        if (typeof titles[j] !== 'string') return null;
+        if (titles[j]) rec.titles.push(titles[j]);
+      }
+      records.push(rec);
+    }
+    return { introduction: introduction, records: records };
+  }
+
+  /**
+   * 由 reading 构建分批渲染视图：每个文档（前言 / 各批正文 / 各批原文）
+   * 独立命名空间与局部锚点表；全局表按出现先后聚合，供跨批锚点解析。
+   */
+  function buildReadingViews(node) {
+    var reading = node && node.reading ? normalizeReading(node.reading) : null;
+    var out = { reading: reading, docs: [], anchorMap: null };
+    if (!reading) return out;
+    var globalMap = new Map();
+    function addDoc(kind, ns, blocks, index, record) {
+      var local = new Map();
+      prepareHeadingIds(blocks, ns, {}, local);
+      local.forEach(function (id, base) {
+        if (!globalMap.has(base)) globalMap.set(base, id);
+      });
+      out.docs.push({
+        kind: kind,
+        ns: ns,
+        blocks: blocks,
+        index: index,
+        record: record || null,
+        anchorMap: local,
+      });
+    }
+    var introBlocks = applySkipTitle(mdParse(reading.introduction), node && node.title);
+    if (introBlocks.length) addDoc('intro', 'intro', introBlocks, 0, null);
+    reading.records.forEach(function (r, i) {
+      var ns = 'r' + (i + 1);
+      addDoc('content', ns, mdParse(r.content), i, r);
+      if (r.transcript && r.transcript.trim()) {
+        addDoc('transcript', ns + 't', mdParse(r.transcript), i, r);
+      }
+    });
+    out.anchorMap = globalMap;
+    return out;
+  }
+
+
   /* ---------- DOM 渲染（仅浏览器执行；全部通过 createElement/textContent 构建，不拼 HTML） ---------- */
 
   function renderMarkdown(src, opts) {
     opts = opts || {};
+    var blocks = applySkipTitle(mdParse(src), opts.skipTitle);
+    var local = new Map();
+    prepareHeadingIds(blocks, opts.ns, {}, local);
+    return renderBlocks(blocks, { anchors: local, globalAnchors: null });
+  }
+
+  /** 渲染已解析的块列表；ctx 携带锚点表（anchors：本文档，globalAnchors：整张卡）。 */
+  function renderBlocks(blocks, ctx) {
     var root = document.createElement('div');
     root.className = 'md';
-    var usedIds = {};
-    var blocks = mdParse(src);
-    for (var bi = 0; bi < blocks.length; bi++) {
-      var b = blocks[bi];
-      if (bi === 0 && opts.skipTitle && b.type === 'heading') {
-        var plain = inlinePlain(b.text);
-        var target = String(opts.skipTitle).trim();
-        if (plain === target || plain.toLowerCase() === target.toLowerCase()) continue;
-      }
-      appendBlock(root, b, usedIds);
+    var list = Array.isArray(blocks) ? blocks : [];
+    for (var bi = 0; bi < list.length; bi++) {
+      appendBlock(root, list[bi], ctx);
     }
     return root;
   }
 
-  function appendBlock(parent, b, usedIds) {
+  function appendBlock(parent, b, ctx) {
     var el;
     if (b.type === 'heading') {
       el = document.createElement('h' + clamp(b.level, 1, 6));
-      var base = slugify(inlinePlain(b.text));
-      var id = base;
-      var n = 2;
-      while (usedIds[id]) id = base + '-' + n++;
-      usedIds[id] = true;
-      el.id = id;
-      renderInlines(b.text, el);
+      el.id = b.id || slugify(inlinePlain(b.text));
+      renderInlines(b.text, el, ctx);
     } else if (b.type === 'paragraph') {
       el = document.createElement('p');
-      renderInlines(b.text, el);
+      renderInlines(b.text, el, ctx);
       if (!el.firstChild) el = null; /* 整段只有注释时不输出空段落 */
     } else if (b.type === 'code') {
       el = document.createElement('pre');
@@ -564,7 +680,7 @@
     } else if (b.type === 'quote') {
       el = document.createElement('blockquote');
       b.children.forEach(function (child) {
-        appendBlock(el, child, usedIds);
+        appendBlock(el, child, ctx);
       });
     } else if (b.type === 'hr') {
       el = document.createElement('hr');
@@ -575,8 +691,8 @@
         var li = document.createElement('li');
         var bs = item.blocks || [];
         bs.forEach(function (ib, idx) {
-          if (idx === 0 && ib.type === 'paragraph') renderInlines(ib.text, li);
-          else appendBlock(li, ib, usedIds);
+          if (idx === 0 && ib.type === 'paragraph') renderInlines(ib.text, li, ctx);
+          else appendBlock(li, ib, ctx);
         });
         el.appendChild(li);
       });
@@ -584,13 +700,13 @@
     if (el) parent.appendChild(el);
   }
 
-  function renderInlines(text, parent) {
+  function renderInlines(text, parent, ctx) {
     var tokens = [];
     scanInline(String(text), tokens);
-    appendTokens(tokens, parent);
+    appendTokens(tokens, parent, ctx);
   }
 
-  function appendTokens(tokens, parent) {
+  function appendTokens(tokens, parent, ctx) {
     tokens.forEach(function (t) {
       if (t.type === 'text') {
         parent.appendChild(document.createTextNode(t.text));
@@ -600,7 +716,7 @@
         parent.appendChild(code);
       } else if (t.type === 'strong' || t.type === 'em' || t.type === 'del') {
         var el = document.createElement(t.type === 'strong' ? 'strong' : t.type === 'em' ? 'em' : 'del');
-        appendTokens(t.children, el);
+        appendTokens(t.children, el, ctx);
         parent.appendChild(el);
       } else if (t.type === 'img') {
         /* 离线页面不加载任何图片：改为文字说明，外链附“查看” */
@@ -621,8 +737,23 @@
       } else if (t.type === 'link') {
         var href = safeHref(t.url);
         if (!href) {
-          appendTokens(t.children, parent);
+          appendTokens(t.children, parent, ctx);
           parent.appendChild(document.createTextNode('（链接未允许，已转为文字）'));
+          return;
+        }
+        if (href.kind === 'anchor' && ctx) {
+          /* 锚点先解析到本批（文档）标题，再查整张卡的全局表；
+           * 未命中则退回纯文本，不产生错误跳转 */
+          var frag = href.href.slice(1);
+          var rid = resolveAnchor(frag, ctx.anchors) || resolveAnchor(frag, ctx.globalAnchors);
+          if (!rid) {
+            appendTokens(t.children, parent, ctx);
+            return;
+          }
+          var aa = document.createElement('a');
+          aa.href = '#' + rid;
+          appendTokens(t.children, aa, ctx);
+          parent.appendChild(aa);
           return;
         }
         var a = document.createElement('a');
@@ -631,7 +762,7 @@
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
         }
-        appendTokens(t.children, a);
+        appendTokens(t.children, a, ctx);
         parent.appendChild(a);
       }
     });
@@ -923,6 +1054,7 @@
         entryCount: typeof n.entryCount === 'number' ? n.entryCount : 0,
         createdAt: typeof n.createdAt === 'string' ? n.createdAt : '',
         updatedAt: typeof n.updatedAt === 'string' ? n.updatedAt : '',
+        reading: normalizeReading(n.reading),
       });
     });
 
@@ -1034,8 +1166,9 @@
       );
     }
 
-    /* ---- 状态：选中 / 搜索 / 折叠 ---- */
+    /* ---- 状态：选中 / 搜索 / 折叠 / 阅读方式 ---- */
     var selectedId = null;
+    var detailReadingMode = 'batches'; /* 'batches' 按批阅读 | 'full' 完整原文；切换节点时重置 */
     var query = '';
     var searchState = null;
     var saved = storeGet();
@@ -1838,6 +1971,179 @@
       return sec;
     }
 
+    /* ---- 分批阅读：模式切换 / 补充记录导航 / 批次正文 / 原文折叠 ---- */
+
+    function renderModeToggle() {
+      var wrap = div('mode-toggle');
+      wrap.setAttribute('role', 'group');
+      wrap.setAttribute('aria-label', '阅读方式');
+      ['batches', 'full'].forEach(function (mode) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mode-btn' + (detailReadingMode === mode ? ' is-active' : '');
+        b.setAttribute('aria-pressed', detailReadingMode === mode ? 'true' : 'false');
+        b.textContent = mode === 'batches' ? '分次阅读' : '完整 Markdown';
+        b.addEventListener('click', function () {
+          switchReadingMode(mode);
+        });
+        wrap.appendChild(b);
+      });
+      return wrap;
+    }
+
+    function switchReadingMode(mode) {
+      if (mode !== 'batches' && mode !== 'full') return;
+      if (detailReadingMode === mode) return;
+      detailReadingMode = mode;
+      renderDetail();
+      /* 重渲染后焦点回到激活的模式按钮，避免键盘焦点丢失到 body */
+      var active = detailEl.querySelector('.mode-btn.is-active');
+      if (detailScroll) detailScroll.scrollTop = 0;
+      if (window.matchMedia('(max-width: 1079.98px)').matches) {
+        requestAnimationFrame(function () {
+          var topbar = document.querySelector('.topbar');
+          var h = topbar ? topbar.getBoundingClientRect().height : 0;
+          var top = window.scrollY + detailEl.getBoundingClientRect().top - h;
+          window.scrollTo(0, Math.max(0, top));
+        });
+      }
+      if (active) {
+        active.focus({ preventScroll: true });
+      }
+      announce(mode === 'batches' ? '已切换到分次阅读' : '已切换到完整 Markdown');
+    }
+
+    /** 补充记录导航：≥2 批才显示；每项「第 N 批 · 日期 · 标题（截断）」，另附最新补充直达。 */
+    function renderRecordNav(node) {
+      var records = node.reading.records;
+      if (records.length < 2) return null;
+      var nav = document.createElement('nav');
+      nav.className = 'record-nav';
+      nav.setAttribute('aria-label', '补充记录');
+      var index = document.createElement('details');
+      index.className = 'record-index';
+      var label = document.createElement('summary');
+      label.className = 'record-nav-label';
+      label.textContent = '归档记录 · ' + records.length + ' 次';
+      index.appendChild(label);
+      var list = document.createElement('ul');
+      list.className = 'record-nav-list';
+      records.forEach(function (r, i) {
+        var li = document.createElement('li');
+        li.appendChild(recordNavBtn(r, i + 1));
+        list.appendChild(li);
+      });
+      index.appendChild(list);
+      nav.appendChild(index);
+      var latest = recordNavBtn(records[records.length - 1], records.length);
+      latest.classList.add('record-nav-latest');
+      latest.textContent = '最近补充 ↓';
+      latest.title = truncateTitles(records[records.length - 1].titles, 100);
+      nav.appendChild(latest);
+      return nav;
+    }
+
+    function recordNavBtn(record, n) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'record-nav-item';
+      var when = document.createElement('span');
+      when.className = 'record-nav-when';
+      when.textContent = '第 ' + n + ' 次 · ' + (formatDate(record.archivedAt, true) || '日期未知');
+      var what = document.createElement('span');
+      what.className = 'record-nav-what';
+      what.textContent = truncateTitles(record.titles, 34);
+      btn.appendChild(when);
+      btn.appendChild(what);
+      btn.addEventListener('click', function () {
+        revealRecord(n);
+      });
+      return btn;
+    }
+
+    /** 标题列表截断：多标题用「；」连接，超长加省略号；无标题时退回占位文案。 */
+    function truncateTitles(titles, max) {
+      var s = (titles || []).filter(Boolean).join('；');
+      if (!s) return '本批整理';
+      s = s.replace(/\s+/g, ' ').trim();
+      return s.length > max ? s.slice(0, Math.max(1, max - 1)) + '…' : s;
+    }
+
+    /** 批次正文：前言 → 各批（日期/整理者 + 整理正文 + 折叠原始问答）。 */
+    function renderBatchBody(node) {
+      var views = buildReadingViews(node);
+      var root = document.createElement('div');
+      root.className = 'reading-body';
+      views.docs.forEach(function (doc) {
+        var ctx = { anchors: doc.anchorMap, globalAnchors: views.anchorMap };
+        if (doc.kind === 'intro') {
+          root.appendChild(renderBlocks(doc.blocks, ctx));
+          return;
+        }
+        if (doc.kind === 'content') {
+          var i = doc.index;
+          var article = document.createElement('article');
+          article.className = 'record-article';
+          article.id = 'record-' + (i + 1);
+          article.setAttribute('data-record', String(i + 1));
+          article.setAttribute('tabindex', '-1');
+          var hd = document.createElement('header');
+          hd.className = 'record-head';
+          var badge = document.createElement('span');
+          badge.className = 'record-badge';
+          badge.textContent = i === 0 ? '首次整理' : '第 ' + (i + 1) + ' 次归档';
+          var meta = document.createElement('span');
+          meta.className = 'record-meta';
+          var bits = [];
+          var d = formatDate(doc.record.archivedAt, true);
+          if (d) bits.push(d);
+          if (doc.record.organizer) bits.push('整理：' + doc.record.organizer);
+          meta.textContent = bits.join(' · ');
+          hd.appendChild(badge);
+          hd.appendChild(meta);
+          article.appendChild(hd);
+          article.appendChild(renderBlocks(doc.blocks, ctx));
+          root.appendChild(article);
+          return;
+        }
+        if (doc.kind === 'transcript') {
+          var host = root.querySelector('.record-article[data-record="' + (doc.index + 1) + '"]');
+          if (!host) return;
+          var details = document.createElement('details');
+          details.className = 'transcript';
+          var summary = document.createElement('summary');
+          summary.appendChild(document.createTextNode('原始问答'));
+          details.appendChild(summary);
+          details.appendChild(renderBlocks(doc.blocks, ctx));
+          host.appendChild(details);
+        }
+      });
+      return root;
+    }
+
+    /** 跳到指定批次：桌面滚 .detail-scroll，窄屏滚 body（避开 sticky 顶栏），并给目标一次高亮。 */
+    function revealRecord(n) {
+      var el = detailEl.querySelector('.record-article[data-record="' + n + '"]');
+      if (!el) return;
+      var GAP = 8;
+      if (!window.matchMedia('(max-width: 1079.98px)').matches && detailScroll) {
+        detailScroll.scrollTop =
+          detailScroll.scrollTop + el.getBoundingClientRect().top - detailScroll.getBoundingClientRect().top - GAP;
+      } else {
+        var topbar = document.querySelector('.topbar');
+        var h = topbar ? topbar.getBoundingClientRect().height : 0;
+        window.scrollTo(0, Math.max(0, window.scrollY + el.getBoundingClientRect().top - h - GAP));
+      }
+      el.classList.remove('is-flash');
+      void el.offsetWidth; /* 重置动画 */
+      el.classList.add('is-flash');
+      setTimeout(function () {
+        el.classList.remove('is-flash');
+      }, 1400);
+      el.focus({ preventScroll: true });
+      announce('已跳到第 ' + n + ' 次归档');
+    }
+
     function renderDetail() {
       while (detailEl.firstChild) detailEl.removeChild(detailEl.firstChild);
       var node = selectedId ? nodeById.get(selectedId) : null;
@@ -1906,6 +2212,7 @@
       head.appendChild(meta);
       if (!isGroup && node.markdown) {
         var actions = div('detail-actions');
+        if (node.reading) actions.appendChild(renderModeToggle());
         var dl = document.createElement('button');
         dl.type = 'button';
         dl.className = 'button-primary';
@@ -1918,18 +2225,33 @@
       }
       detailEl.appendChild(head);
 
-      /* 子知识点 */
-      var childSec = renderChildSection(node);
-      if (childSec) detailEl.appendChild(childSec);
-
-      /* 相关知识（语义关联） */
-      detailEl.appendChild(renderRelatedSection(node));
-
-      /* Markdown 正文（分组没有正文） */
-      if (!isGroup) {
+      /* 正文先于关系列表（阅读优先，导航仍保留在后） */
+      if (!isGroup && node.reading && detailReadingMode !== 'full') {
+        var nav = renderRecordNav(node);
+        if (nav) detailEl.appendChild(nav);
+        var batchSection = document.createElement('section');
+        batchSection.className = 'detail-section';
+        batchSection.appendChild(sectionTitle('卡片正文'));
+        var batchBody = renderBatchBody(node);
+        if (!batchBody.childElementCount) {
+          var bEmpty = document.createElement('p');
+          bEmpty.className = 'md-empty';
+          bEmpty.textContent = '（卡片没有正文内容）';
+          batchBody.appendChild(bEmpty);
+        }
+        batchSection.appendChild(batchBody);
+        detailEl.appendChild(batchSection);
+      } else if (!isGroup) {
         var cardSection = document.createElement('section');
         cardSection.className = 'detail-section';
-        cardSection.appendChild(sectionTitle('卡片内容'));
+        cardSection.appendChild(sectionTitle('卡片正文'));
+        if (!node.reading && node.entryCount > 1) {
+          var mergeNote = document.createElement('p');
+          mergeNote.className = 'merge-note';
+          mergeNote.textContent =
+            '这张卡片由 ' + node.entryCount + ' 次讨论累积而成，暂未能按批拆分，以下为完整原文。';
+          cardSection.appendChild(mergeNote);
+        }
         var mdRoot = renderMarkdown(node.markdown, { skipTitle: node.title });
         if (!mdRoot.childElementCount) {
           var empty = document.createElement('p');
@@ -1940,12 +2262,20 @@
         cardSection.appendChild(mdRoot);
         detailEl.appendChild(cardSection);
       }
+
+      /* 子知识点 */
+      var childSec = renderChildSection(node);
+      if (childSec) detailEl.appendChild(childSec);
+
+      /* 相关知识（语义关联） */
+      detailEl.appendChild(renderRelatedSection(node));
     }
 
     /* ---- 选中（同步树展开与图谱视图） ---- */
     function selectNode(id, opts) {
       opts = opts || {};
       selectedId = id;
+      detailReadingMode = 'batches'; /* 切换节点不保留上一张卡的阅读方式与展开状态 */
       if (id != null) {
         var p = hierarchy.parentOf.get(id) || null;
         var guard = 0;
@@ -2227,6 +2557,11 @@
       textOfTokens: textOfTokens,
       inlinePlain: inlinePlain,
       formatDate: formatDate,
+      applySkipTitle: applySkipTitle,
+      prepareHeadingIds: prepareHeadingIds,
+      resolveAnchor: resolveAnchor,
+      normalizeReading: normalizeReading,
+      buildReadingViews: buildReadingViews,
     };
   }
 })();
