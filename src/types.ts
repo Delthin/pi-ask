@@ -106,6 +106,19 @@ export interface Routing {
   relations: { source: NodeRef; target: NodeRef; relation: string; reason: string }[];
 }
 
+/** Read-only projection of recognized append-only card batches. Never persisted to index.json. */
+export interface CardReading {
+  introduction: string;
+  records: {
+    id: string;
+    archivedAt: string;
+    organizer: string;
+    titles: string[];
+    content: string;
+    transcript: string;
+  }[];
+}
+
 export interface GraphData {
   version: 2;
   /** Stable namespace for browser-only layout preferences. */
@@ -115,6 +128,8 @@ export interface GraphData {
     entryCount: number;
     /** Empty for grouping nodes. */
     markdown: string;
+    /** Absent when the original Markdown cannot be split unambiguously. */
+    reading?: CardReading;
   })[];
   edges: KnowledgeEdge[];
 }
