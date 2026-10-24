@@ -6,7 +6,7 @@ pi-ask 将 Pi 中的讨论整理成保存在本地的 Markdown 知识卡片。�
 
 ## 看看效果
 
-[打开交互 demo](https://delthin.github.io/pi-ask/) · [下载 v0.2.0 离线 demo](https://github.com/Delthin/pi-ask/releases/download/v0.2.0/pi-ask-demo.zip)
+[打开交互 demo](https://delthin.github.io/pi-ask/) · [下载离线 demo](https://github.com/Delthin/pi-ask/releases/download/v0.3.0/pi-ask-demo.zip)
 
 [![pi-ask 示例：三级知识树、语义关联和 Markdown 卡片](https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png)](https://delthin.github.io/pi-ask/)
 
@@ -52,7 +52,7 @@ pi install npm:@delthin/pi-ask
 
 升级后运行 `/ask graph`，刷新已有 HTML，即可使用新的阅读视图。
 
-也可以通过 `pi install git:github.com/Delthin/pi-ask@v0.2.1` 安装 GitHub 标签版本；本地开发使用 `pi install /绝对路径/pi-ask`。
+也可以通过 `pi install git:github.com/Delthin/pi-ask@v0.3.0` 安装 GitHub 标签版本；本地开发使用 `pi install /绝对路径/pi-ask`。
 
 ## 命令
 

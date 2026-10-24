@@ -6,7 +6,7 @@ pi-ask turns Pi discussions into local Markdown knowledge cards. Start a discuss
 
 ## Preview
 
-[Open the interactive demo](https://delthin.github.io/pi-ask/) · [Download the v0.2.0 offline demo](https://github.com/Delthin/pi-ask/releases/download/v0.2.0/pi-ask-demo.zip)
+[Open the interactive demo](https://delthin.github.io/pi-ask/) · [Download the offline demo](https://github.com/Delthin/pi-ask/releases/download/v0.3.0/pi-ask-demo.zip)
 
 [![pi-ask: a three-level knowledge tree, semantic connections, and a Markdown card](https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png)](https://delthin.github.io/pi-ask/)
 
@@ -52,7 +52,7 @@ The reading view keeps explanations in their original append order. Its record n
 
 After upgrading, run `/ask graph` and refresh the existing HTML page to use the new reading view.
 
-You can also install the tagged GitHub version with `pi install git:github.com/Delthin/pi-ask@v0.2.1`, or use `pi install /absolute/path/to/pi-ask` for local development.
+You can also install the tagged GitHub version with `pi install git:github.com/Delthin/pi-ask@v0.3.0`, or use `pi install /absolute/path/to/pi-ask` for local development.
 
 ## Commands
 
