@@ -1,5 +1,5 @@
 /*
- * pi-ask 离线知识图谱浏览
+ * pi-cardex 离线知识图谱浏览
  * 原生 JS，零依赖；作为经典脚本内联进导出页。
  * 结构：纯函数工具 → Markdown 解析（纯） → 力导向布局（纯） → 页面应用。
  */
@@ -150,7 +150,7 @@
 
   function mdParse(src) {
     var text = String(src == null ? '' : src).replace(/\r\n?/g, '\n');
-    /* 跳过文档开头的 YAML frontmatter（卡片由 pi-ask 自动写入 id/title 等元数据） */
+    /* 跳过文档开头的 YAML frontmatter（卡片由 pi-cardex 自动写入 id/title 等元数据） */
     var fm = /^---[ \t]*\n[\s\S]*?\n---[ \t]*(?:\n|$)/.exec(text);
     if (fm) text = text.slice(fm[0].length);
     var lines = text.split('\n');
@@ -1017,7 +1017,7 @@
   }
 
   function init() {
-    var dataEl = document.getElementById('ask-data');
+    var dataEl = document.getElementById('cardex-data');
     var raw = (dataEl && dataEl.textContent) || '';
     var data = null;
     try {
@@ -1026,12 +1026,12 @@
       data = null;
     }
     if (!data || typeof data !== 'object' || !Array.isArray(data.nodes)) {
-      var placeholderName = '__PI_ASK' + '_DATA__';
+      var placeholderName = '__PI_CARDEX' + '_DATA__';
       var isTemplate = raw.trim().indexOf(placeholderName) === 0;
       showFatal(
         isTemplate
-          ? '这个页面是模板，还没有注入图谱数据。请先由 pi-ask 导出生成可浏览的 HTML，再打开导出的文件。'
-          : '页面里的图谱数据无法解析。请重新用 pi-ask 导出本页后再打开。'
+          ? '这个页面是模板，还没有注入图谱数据。请先由 pi-cardex 导出生成可浏览的 HTML，再打开导出的文件。'
+          : '页面里的图谱数据无法解析。请重新用 pi-cardex 导出本页后再打开。'
       );
       return;
     }
@@ -1137,7 +1137,7 @@
 
     /* ---- localStorage 记忆（节点位置 + 视口 + 折叠选择；失败降级为仅内存） ---- */
     var storeKey =
-      'pi-ask:layout:v2:' + encodeURIComponent(String(data.libraryId || 'default'));
+      'pi-cardex:layout:v2:' + encodeURIComponent(String(data.libraryId || 'default'));
 
     function storeGet() {
       try {

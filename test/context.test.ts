@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { containsDiscussion, ConversationSnapshot, type ConversationMessages } from "../src/context.ts";
 import { modelCaller } from "../src/model.ts";
-import type { AskConfig, TranscriptMessage } from "../src/types.ts";
+import type { CardexConfig, TranscriptMessage } from "../src/types.ts";
 
 type Context = Parameters<ExtensionContext["modelRegistry"]["streamSimple"]>[1];
 type Options = Parameters<ExtensionContext["modelRegistry"]["streamSimple"]>[2];
-const config: AskConfig = { version: 1, directory: "/tmp/unused", model: null, timeoutMs: 1000 };
+const config: CardexConfig = { version: 1, directory: "/tmp/unused", model: null, timeoutMs: 1000 };
 const discussion: TranscriptMessage[] = [{ role: "user", text: "ASK_QUESTION", timestamp: 3 }, { role: "assistant", text: "ASK_ANSWER", timestamp: 5, model: "local/model" }];
 const initial = () => [
   { role: "system", content: "CHAT_SYSTEM", toolsAdded: [{ name: "read", description: "Existing declaration", parameters: { type: "object", properties: {} } }], timestamp: 1 },

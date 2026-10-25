@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import askExtension from "../src/extension.ts";
+import cardexExtension from "../src/extension.ts";
 import { updateConfig, loadConfig } from "../src/config.ts";
 import { activeDraft, FINISH, preparedArchive, textContent, type BranchEntry } from "../src/session.ts";
 import { loadIndex } from "../src/store.ts";
@@ -50,7 +50,7 @@ function host(configPath: string) {
       branch.push({ id: `entry-${branch.length}`, type: "message", message: { role: "user", content: text, timestamp: Date.now() } });
     },
   } as unknown as ExtensionAPI;
-  const reload = () => { askExtension(pi, configPath); events.get("session_start")?.({}, ctx); };
+  const reload = () => { cardexExtension(pi, configPath); events.get("session_start")?.({}, ctx); };
   reload();
   return {
     branch, notifications, calls, ctx, events, reload,
@@ -66,7 +66,7 @@ function host(configPath: string) {
 }
 
 test("命令流程：选择模型、记录/恢复、固定目录、结束去重及追加", async t => {
-  const root = await mkdtemp(join(tmpdir(), "ask-extension-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const root = await mkdtemp(join(tmpdir(), "cardex-extension-")); t.after(() => rm(root, { recursive: true, force: true }));
   const configPath = join(root, "config.json"); const library = join(root, "library");
   await updateConfig(configPath, { directory: library });
   const app = host(configPath);
@@ -118,7 +118,7 @@ test("命令流程：选择模型、记录/恢复、固定目录、结束去重�
 });
 
 test("follow 模式一次讨论归档多卡与三级树，整理结果不污染聊天", async t => {
-  const root = await mkdtemp(join(tmpdir(), "ask-multi-command-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const root = await mkdtemp(join(tmpdir(), "cardex-multi-command-")); t.after(() => rm(root, { recursive: true, force: true }));
   const path = join(root, "config.json"); const library = join(root, "library");
   await updateConfig(path, { directory: library });
   const app = host(path);
@@ -153,7 +153,7 @@ test("follow 模式一次讨论归档多卡与三级树，整理结果不污染�
 });
 
 test("模型失败保留草稿，cancel 只结束记录，模型设置不改聊天模型", async t => {
-  const root = await mkdtemp(join(tmpdir(), "ask-failed-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const root = await mkdtemp(join(tmpdir(), "cardex-failed-")); t.after(() => rm(root, { recursive: true, force: true }));
   const path = join(root, "config.json"); const library = join(root, "library");
   await updateConfig(path, { directory: library });
   const app = host(path);
@@ -171,7 +171,7 @@ test("模型失败保留草稿，cancel 只结束记录，模型设置不改聊�
 });
 
 test("归档期间阻止消息与分支切换，关闭时中止模型调用", async t => {
-  const root = await mkdtemp(join(tmpdir(), "ask-busy-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const root = await mkdtemp(join(tmpdir(), "cardex-busy-")); t.after(() => rm(root, { recursive: true, force: true }));
   const path = join(root, "config.json"); await updateConfig(path, { directory: join(root, "library") });
   const app = host(path);
   await app.command("问题"); app.assistant("回答");
@@ -188,7 +188,7 @@ test("归档期间阻止消息与分支切换，关闭时中止模型调用", as
 });
 
 test("模型适配器响应外部取消和不完整输出", async () => {
-  const app = host(join(tmpdir(), "unused-ask-config.json"));
+  const app = host(join(tmpdir(), "unused-cardex-config.json"));
   const config = { version: 1 as const, directory: "/tmp/unused", model: null, timeoutMs: 1000 };
   const aborted = new AbortController(); aborted.abort(new Error("cancelled"));
   await assert.rejects(modelCaller(app.ctx, config, aborted.signal).call("s", {}), /cancelled/);

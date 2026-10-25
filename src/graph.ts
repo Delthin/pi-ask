@@ -18,6 +18,6 @@ export async function renderGraph(directory: string, index: KnowledgeIndex): Pro
   const [template, css, js] = await Promise.all(["template.html", "graph.css", "graph.js"].map(name => readFile(new URL(`../web/${name}`, import.meta.url), "utf8")));
   const encoded = JSON.stringify(data).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   // Function replacers preserve literal '$&' and '$`' in user text.
-  const html = template.replace("/*PI_ASK_CSS*/", () => css).replace("/*PI_ASK_JS*/", () => js).replace("__PI_ASK_DATA__", () => encoded);
+  const html = template.replace("/*PI_CARDEX_CSS*/", () => css).replace("/*PI_CARDEX_JS*/", () => js).replace("__PI_CARDEX_DATA__", () => encoded);
   await atomicWrite(join(directory, "index.html"), html);
 }

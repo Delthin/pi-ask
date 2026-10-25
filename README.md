@@ -1,14 +1,14 @@
-# pi-ask
+# pi-cardex
 
-English · [简体中文](https://github.com/Delthin/pi-ask/blob/main/README.zh-CN.md)
+English · [简体中文](https://github.com/Delthin/pi-cardex/blob/main/README.zh-CN.md)
 
-pi-ask turns Pi discussions into local Markdown knowledge cards. Start a discussion with `/ask`, ask follow-up questions, then run `/ask end`. The extension separates the discussion into knowledge points, adds to existing cards when the topic matches, and organizes the cards into a tree with up to three levels. An offline HTML page lets you browse the tree, follow connections between topics, and read the cards.
+pi-cardex turns Pi discussions into local Markdown knowledge cards. Start a discussion with `/card`, ask follow-up questions, then run `/card end`. The extension separates the discussion into knowledge points, adds to existing cards when the topic matches, and organizes the cards into a tree with up to three levels. An offline HTML page lets you browse the tree, follow connections between topics, and read the cards.
 
 ## Preview
 
-[Open the interactive demo](https://delthin.github.io/pi-ask/) · [Download the offline demo](https://github.com/Delthin/pi-ask/releases/download/v0.3.0/pi-ask-demo.zip)
+[Open the interactive demo](https://delthin.github.io/pi-cardex/) · [Download the offline demo](https://github.com/Delthin/pi-cardex/releases/download/v0.4.0/pi-cardex-demo.zip)
 
-[![pi-ask: a three-level knowledge tree, semantic connections, and a Markdown card](https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png)](https://delthin.github.io/pi-ask/)
+[![pi-cardex: a three-level knowledge tree, semantic connections, and a Markdown card](https://raw.githubusercontent.com/Delthin/pi-cardex/main/demo/preview.png)](https://delthin.github.io/pi-cardex/)
 
 The demo uses preset JavaScript notes in a Chinese-language interface. Select “闭包” (closures) to see the path through lexical scope and its connections to garbage collection and Promise callbacks. The right pane uses two archive batches to demonstrate a foundational explanation followed by an addition, with source Q&A that can be expanded for comparison. The left pane supports folding and search; the graph supports dragging and zooming. The demo runs entirely in the browser.
 
@@ -17,17 +17,17 @@ The demo uses preset JavaScript notes in a Chinese-language interface. Select �
 Use Node.js 22.6 or later and a Pi host that provides `modelRegistry.streamSimple()`. The extension was implemented against the APIs in `@earendil-works/pi-coding-agent` 1.2.0.
 
 ```sh
-pi install npm:@delthin/pi-ask
+pi install npm:@delthin/pi-cardex
 ```
 
 Restart Pi or run `/reload` in an existing session. Choose your archive directory and start a discussion:
 
 ```text
-/ask dir ~/journal/ask
-/ask What is a JavaScript closure? Explain lexical scope first, then show an example. Write the cards in English.
+/card dir ~/journal/cardex
+/card What is a JavaScript closure? Explain lexical scope first, then show an example. Write the cards in English.
 ```
 
-After Pi replies, continue the conversation normally, or use `/ask` for follow-ups:
+After Pi replies, continue the conversation normally, or use `/card` for follow-ups:
 
 ```text
 How does this relate to garbage collection? Do Promise callbacks also use closures?
@@ -36,8 +36,8 @@ How does this relate to garbage collection? Do Promise callbacks also use closur
 When you finish, archive the discussion and get the graph's file address:
 
 ```text
-/ask end
-/ask graph
+/card end
+/card graph
 ```
 
 Open the reported `index.html` address in your browser. A discussion can create several cards and extend existing ones in the same archive operation; the result depends on the topics actually covered. Each card contains the explanation, relevant examples and Q&A, plus links to the full discussion.
@@ -50,39 +50,39 @@ The reading view keeps explanations in their original append order. Its record n
 
 “完整 Markdown” (full Markdown) displays the entire card, and downloads always preserve the full original file. Older or manually edited cards whose batch boundaries cannot be identified reliably are shown in full. Reading sections are derived locally while generating HTML, without model calls or changes to cards or the index. They help with reading and checking sources; comparing repeated or conflicting statements still requires reading the original material.
 
-After upgrading, run `/ask graph` and refresh the existing HTML page to use the new reading view.
+After upgrading, run `/card graph` and refresh the existing HTML page to use the new reading view.
 
-You can also install the tagged GitHub version with `pi install git:github.com/Delthin/pi-ask@v0.3.0`, or use `pi install /absolute/path/to/pi-ask` for local development.
+You can also install the tagged GitHub version with `pi install git:github.com/Delthin/pi-cardex@v0.4.0`, or use `pi install /absolute/path/to/pi-cardex` for local development.
 
 ## Commands
 
 | Command | Action |
 | --- | --- |
-| `/ask question` | Start recording a discussion, or ask a follow-up in the active one. |
-| `/ask end` | Split the discussion into knowledge points, create or extend cards, and update the tree, connections, and HTML. |
-| `/ask cancel` | End recording and keep the chat history. |
-| `/ask model` | Choose a default organizer from the models available in Pi. |
-| `/ask model current` | Pin the current chat model as the organizer. |
-| `/ask model follow` | Follow the chat model and reuse the conversation context for organization. |
-| `/ask model provider/model-id` | Select an organizer already configured in Pi. |
-| `/ask dir /absolute/path` | Set the archive directory; `~/` is also supported. |
-| `/ask status` | Show recording status, the archive directory, organizer, and configuration path. |
-| `/ask graph` | Rebuild the offline graph and display its file address. |
-| `/ask help` | Show command help. |
-| `/ask -- question` | Ask a question beginning with a command word such as `end` or `model`. |
+| `/card question` | Start recording a discussion, or ask a follow-up in the active one. |
+| `/card end` | Split the discussion into knowledge points, create or extend cards, and update the tree, connections, and HTML. |
+| `/card cancel` | End recording and keep the chat history. |
+| `/card model` | Choose a default organizer from the models available in Pi. |
+| `/card model current` | Pin the current chat model as the organizer. |
+| `/card model follow` | Follow the chat model and reuse the conversation context for organization. |
+| `/card model provider/model-id` | Select an organizer already configured in Pi. |
+| `/card dir /absolute/path` | Set the archive directory; `~/` is also supported. |
+| `/card status` | Show recording status, the archive directory, organizer, and configuration path. |
+| `/card graph` | Rebuild the offline graph and display its file address. |
+| `/card help` | Show command help. |
+| `/card -- question` | Ask a question beginning with a command word such as `end` or `model`. |
 
-Archiving waits for the current response to finish. Wait for an `/ask` operation to complete before submitting another message. Text submitted while it is processing is returned to the editor for you to resend.
+Archiving waits for the current response to finish. Wait for an `/card` operation to complete before submitting another message. Text submitted while it is processing is returned to the editor for you to resend.
 
 ## Models and configuration
 
-Chat replies use Pi's current model. The organizer uses Pi's existing model configuration and authentication; select it with `/ask model`. The initial default is **follow**, which uses the chat model and appends the organizing instructions to the current conversation context.
+Chat replies use Pi's current model. The organizer uses Pi's existing model configuration and authentication; select it with `/card model`. The initial default is **follow**, which uses the chat model and appends the organizing instructions to the current conversation context.
 
-Configuration is saved when you first change a model or directory. The default file is `~/.pi/agent/pi-ask.json`; a custom Pi agent directory changes its location. `/ask status` shows the actual path. You can also edit the file directly:
+Configuration is saved when you first change a model or directory. The default file is `~/.pi/agent/pi-cardex.json`; a custom Pi agent directory changes its location. `/card status` shows the actual path. You can also edit the file directly:
 
 ```json
 {
   "version": 1,
-  "directory": "~/journal/ask",
+  "directory": "~/journal/cardex",
   "model": null,
   "timeoutMs": 120000
 }
@@ -90,20 +90,20 @@ Configuration is saved when you first change a model or directory. The default f
 
 Set `model` to `{ "provider": "your-provider", "id": "your-model-id" }` to pin an organizer. `timeoutMs` applies to each model request and accepts values from 1000 to 600000 milliseconds.
 
-The archive directory is fixed independently of Pi's working directory. Each discussion keeps the directory it started with. Changing `/ask dir` during a discussion sets the default for the next one; existing files stay in their original location.
+The archive directory is fixed independently of Pi's working directory. Each discussion keeps the directory it started with. Changing `/card dir` during a discussion sets the default for the next one; existing files stay in their original location.
 
 ### Conversation reuse and caching
 
 In follow mode, the organizer reuses the most recent request's messages, system instructions, and tool definitions, includes the final answer, then adds the organizing instructions at the end. The appended prompt identifies the current discussion by message position, so it does not repeat the Q&A text. After a reload, the extension reconstructs the context from the session's effective message history. If compaction or other changes have removed part of the discussion, it reports the fallback and organizes a snapshot of the original Q&A instead.
 
-Keeping the request prefix can help reuse the provider's input cache. Cache hits still depend on the provider, cache lifetime, and request changes made by other extensions. Without a cache hit, sending the full conversation costs more input tokens than sending only the current discussion. A pinned organizer, including `/ask model current`, uses a separate context containing the current discussion.
+Keeping the request prefix can help reuse the provider's input cache. Cache hits still depend on the provider, cache lifetime, and request changes made by other extensions. Without a cache hit, sending the full conversation costs more input tokens than sending only the current discussion. A pinned organizer, including `/card model current`, uses a separate context containing the current discussion.
 
 ## Files and organization
 
-By default, pi-ask writes to `~/journal/ask/`:
+By default, pi-cardex writes to `~/journal/cardex/`:
 
 ```text
-~/journal/ask/
+~/journal/cardex/
 ├── index.json          # Titles, summaries, hierarchy, card paths, sources, and connections
 ├── index.html          # Offline tree and graph with all card contents embedded
 ├── cards/
@@ -120,11 +120,11 @@ Version 1 indexes are read as root-level knowledge nodes, retaining their IDs an
 
 ### Card content and language
 
-The [card-writing prompt](https://github.com/Delthin/pi-ask/blob/main/src/prompts/knowledge-card.md) guides the organizer to explain the topic with the background, mechanisms, and examples needed for study. It preserves relevant qualifications and uncertainty. You can edit this prompt; the next organization request reads the updated file. The program saves the original Q&A separately from the model's explanation.
+The [card-writing prompt](https://github.com/Delthin/pi-cardex/blob/main/src/prompts/knowledge-card.md) guides the organizer to explain the topic with the background, mechanisms, and examples needed for study. It preserves relevant qualifications and uncertainty. You can edit this prompt; the next organization request reads the updated file. The program saves the original Q&A separately from the model's explanation.
 
 Cards default to Chinese. Explicitly request another output language during the discussion to change it, as in the English example above. The browsing interface and command messages are currently in Chinese.
 
-Recording covers the current session branch from `/ask` to `/ask end`. Cards retain answer model names and visible Q&A text. Partial answers remain available with an interrupted, error, or length-limit label. Images are represented by an attachment notice; tool results and model thinking are excluded from the cards. A background summary can preserve context needed to understand the topic. With a pinned organizer, include any necessary earlier background in the current discussion.
+Recording covers the current session branch from `/card` to `/card end`. Cards retain answer model names and visible Q&A text. Partial answers remain available with an interrupted, error, or length-limit label. Images are represented by an attachment notice; tool results and model thinking are excluded from the cards. A background summary can preserve context needed to understand the topic. With a pinned organizer, include any necessary earlier background in the current discussion.
 
 Reopening the same session resumes an unfinished recording. Compaction does not change the original Q&A available for archiving, and each branch archives its own messages. Repeating the same archive request is deduplicated.
 
@@ -138,13 +138,13 @@ Cards, indexes, and HTML are local plaintext files. The HTML embeds every card: 
 
 ## Recovery and backups
 
-If a model times out, is unavailable, or returns invalid output, the recording remains available. Adjust the organizer if needed and retry `/ask end`.
+If a model times out, is unavailable, or returns invalid output, the recording remains available. Adjust the organizer if needed and retry `/card end`.
 
-Before writing archive files, the extension freezes the discussion's Q&A snapshot. A retry detects cards already saved even if the session's completion marker was not written. While an archive is pending, use `/ask end` to retry or `/ask cancel` to end recording before asking more questions. Canceling retains any cards already saved.
+Before writing archive files, the extension freezes the discussion's Q&A snapshot. A retry detects cards already saved even if the session's completion marker was not written. While an archive is pending, use `/card end` to retry or `/card cancel` to end recording before asking more questions. Canceling retains any cards already saved.
 
-One `.pi-ask-transaction.json` journal covers all cards, the full discussion, and the index in an archive operation. It is removed when the operation finishes. After a process interruption, the next library access recovers the pending transaction. Power-loss durability depends on the operating system and filesystem; directory synchronization is skipped on Windows. Back up the entire archive directory, including a transaction file if one is present.
+One `.pi-cardex-transaction.json` journal covers all cards, the full discussion, and the index in an archive operation. It is removed when the operation finishes. After a process interruption, the next library access recovers the pending transaction. Power-loss durability depends on the operating system and filesystem; directory synchronization is skipped on Windows. Back up the entire archive directory, including a transaction file if one is present.
 
-A `.pi-ask.lock` file prevents concurrent writers. Retry later if another Pi process is writing. If a process exited abnormally and left a lock, the error reports its path: confirm that no process is still writing to that library, then remove the stale lock and retry. Missing or damaged indexes and cards require restoration from backup.
+A `.pi-cardex.lock` file prevents concurrent writers. Retry later if another Pi process is writing. If a process exited abnormally and left a lock, the error reports its path: confirm that no process is still writing to that library, then remove the stale lock and retry. Missing or damaged indexes and cards require restoration from backup.
 
 ## Development and publishing
 
@@ -159,7 +159,7 @@ Tests use temporary directories and mocked models. They make no real model reque
 
 The `demo/` directory contains preset data, its generator, and the preview screenshot. Run `npm run demo` after changing the demo data, then open `demo/site/index.html`. The generator writes only the listed demo files. Committing the generated output updates the online demo through GitHub Pages.
 
-The npm package is published as **`@delthin/pi-ask`**. It includes `src/`, `web/`, and both READMEs. Demo files and development tests stay in the repository. The `pi-package` keyword makes the package discoverable by the [Pi package directory](https://pi.dev/packages); the manifest also provides the extension entry and preview image. See the [Pi package documentation](https://pi.dev/docs/latest/packages) for discovery and installation details.
+The npm package is published as **`@delthin/pi-cardex`**. It includes `src/`, `web/`, and both READMEs. Demo files and development tests stay in the repository. The `pi-package` keyword makes the package discoverable by the [Pi package directory](https://pi.dev/packages); the manifest also provides the extension entry and preview image. See the [Pi package documentation](https://pi.dev/docs/latest/packages) for discovery and installation details.
 
 For a new release, update the version in `package.json` and `package-lock.json`, run the relevant checks, and publish from the repository root using an npm account authorized for `@delthin`:
 

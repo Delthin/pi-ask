@@ -10,7 +10,7 @@ function object(raw: unknown): Record<string, unknown> {
   if (typeof raw === "string") {
     const text = raw.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```$/, "").trim();
     try { value = JSON.parse(text); }
-    catch { throw new Error("整理模型没有返回有效 JSON；本次记录已保留，可重试 /ask end。"); }
+    catch { throw new Error("整理模型没有返回有效 JSON；本次记录已保留，可重试 /card end。"); }
   }
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("整理模型返回的结构不是对象。");
   return value as Record<string, unknown>;
@@ -39,7 +39,7 @@ export async function retrieve(question: string, entries: CatalogEntry[], call: 
 }
 
 export async function organize(messages: TranscriptMessage[], call: ModelCall): Promise<OrganizedNote[]> {
-  if (!messages.some(x => x.role === "user") || !messages.some(x => x.role === "assistant")) throw new Error("本次还没有可归档的问答文字，请等模型回答后再运行 /ask end。");
+  if (!messages.some(x => x.role === "user") || !messages.some(x => x.role === "assistant")) throw new Error("本次还没有可归档的问答文字，请等模型回答后再运行 /card end。");
   const cardWriting = await readFile(new URL("./prompts/knowledge-card.md", import.meta.url), "utf8");
   const result = object(await call(`${SAFETY}
 

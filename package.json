@@ -1,19 +1,19 @@
 {
-  "name": "@delthin/pi-ask",
-  "version": "0.3.0",
+  "name": "@delthin/pi-cardex",
+  "version": "0.4.0",
   "description": "Turn Pi conversations into local Markdown knowledge cards and an offline graph.",
   "type": "module",
   "keywords": ["pi-package", "knowledge-base", "knowledge-graph", "markdown"],
   "author": "Delthin",
-  "repository": { "type": "git", "url": "git+https://github.com/Delthin/pi-ask.git" },
-  "homepage": "https://github.com/Delthin/pi-ask#readme",
-  "bugs": { "url": "https://github.com/Delthin/pi-ask/issues" },
+  "repository": { "type": "git", "url": "git+https://github.com/Delthin/pi-cardex.git" },
+  "homepage": "https://github.com/Delthin/pi-cardex#readme",
+  "bugs": { "url": "https://github.com/Delthin/pi-cardex/issues" },
   "publishConfig": { "access": "public" },
   "engines": { "node": ">=22.6" },
   "files": ["src", "web", "README.md", "README.zh-CN.md"],
   "pi": {
     "extensions": ["./src/extension.ts"],
-    "image": "https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png"
+    "image": "https://raw.githubusercontent.com/Delthin/pi-cardex/main/demo/preview.png"
   },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.ts",

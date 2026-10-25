@@ -126,7 +126,7 @@ test("旧版、缺失/重复/错序标记、被编辑的分隔或来源均完整
 });
 
 test("真实归档连续补充后导出批次，重建不会修改卡片/索引或调用模型", async t => {
-  const root = await mkdtemp(join(tmpdir(), "ask-reading-"));
+  const root = await mkdtemp(join(tmpdir(), "cardex-reading-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   let cardId: string | null = null;
   let file = "";
@@ -149,7 +149,7 @@ test("真实归档连续补充后导出批次，重建不会修改卡片/索引�
   assert.equal(await readFile(join(root, file), "utf8"), before);
   assert.equal(await readFile(join(root, "index.json"), "utf8"), indexBefore);
   const html = await readFile(join(root, "index.html"), "utf8");
-  const graph = JSON.parse(html.match(/<script id="ask-data" type="application\/json">([\s\S]*?)<\/script>/)![1]!);
+  const graph = JSON.parse(html.match(/<script id="cardex-data" type="application\/json">([\s\S]*?)<\/script>/)![1]!);
   assert.equal(graph.nodes[0].markdown, before, "下载数据始终为完整原文件");
   assert.equal(graph.nodes[0].entryCount, 3);
   assert.equal(graph.nodes[0].reading.records.length, 3);

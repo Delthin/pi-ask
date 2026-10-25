@@ -35,7 +35,7 @@ export async function atomicWrite(path: string, text: string): Promise<void> {
 /** Never steal a live lock or guess based on elapsed time. */
 export async function withLock<T>(directory: string, action: () => Promise<T>): Promise<T> {
   await mkdir(directory, { recursive: true, mode: 0o700 });
-  const lock = join(directory, ".pi-ask.lock");
+  const lock = join(directory, ".pi-cardex.lock");
   const owner = { token: randomUUID(), pid: process.pid, host: hostname() };
   const handle = await open(lock, "wx", 0o600).catch(async (error: NodeJS.ErrnoException) => {
     if (error.code !== "EEXIST") throw error;

@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import type { Draft, TranscriptMessage } from "./types.ts";
 
-export const START = "pi-ask:start";
-export const FINISH = "pi-ask:finish";
-export const PREPARE = "pi-ask:prepare";
+export const START = "pi-cardex:start";
+export const FINISH = "pi-cardex:finish";
+export const PREPARE = "pi-cardex:prepare";
 
 export interface PreparedArchive {
   draftId: string;
@@ -35,7 +35,7 @@ export function activeDraft(branch: readonly BranchEntry[]): Draft | undefined {
     if (entry.customType === START) {
       const data = entry.data as Draft | undefined;
       if (!data || ![data.id, data.directory, data.question, data.startedAt].every(x => typeof x === "string" && x.length > 0)) {
-        throw new Error("本次 /ask 的会话标记损坏，无法确定记录范围。");
+        throw new Error("本次 /card 的会话标记损坏，无法确定记录范围。");
       }
       draft = data;
     } else if (entry.customType === FINISH && (entry.data as { draftId?: string })?.draftId === draft?.id) {
@@ -57,7 +57,7 @@ export function textContent(content: unknown): string {
 
 export function collectTranscript(branch: readonly BranchEntry[], draft: Draft): TranscriptMessage[] {
   const start = branch.findIndex(entry => entry.type === "custom" && entry.customType === START && (entry.data as Draft)?.id === draft.id);
-  if (start < 0) throw new Error("当前分支中找不到 /ask 的起点。");
+  if (start < 0) throw new Error("当前分支中找不到 /card 的起点。");
   const messages: TranscriptMessage[] = [];
   for (const entry of branch.slice(start + 1)) {
     if (entry.type !== "message" || !entry.message) continue;

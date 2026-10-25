@@ -9,7 +9,7 @@ import { catalog, organize, parseRouting, retrieve, route } from "../src/intelli
 import { withLock } from "../src/files.ts";
 import type { Draft, KnowledgeIndex, OrganizedNote, Routing, TranscriptMessage } from "../src/types.ts";
 
-const draft: Draft = { id: "draft-1", directory: "/tmp/ask", question: "什么是闭包？", startedAt: "2026-01-01T00:00:00Z" };
+const draft: Draft = { id: "draft-1", directory: "/tmp/cardex", question: "什么是闭包？", startedAt: "2026-01-01T00:00:00Z" };
 const note: OrganizedNote = { id: "n1", title: "闭包", summary: "词法作用域及变量捕获", background: "JavaScript", content: "保留外部变量访问。", messageIndices: [0, 1] };
 const index: KnowledgeIndex = { version: 2, revision: 1, updatedAt: "now", nodes: [{ id: "a", kind: "knowledge", parentId: null, title: "闭包", summary: "作用域", file: "cards/a.md", createdAt: "now", updatedAt: "now", recordIds: ["r1"] }], edges: [], discussions: [] };
 function plan(matchId: string | null = "a"): Routing {
@@ -17,8 +17,8 @@ function plan(matchId: string | null = "a"): Routing {
 }
 
 test("配置采用固定绝对目录，持久化模型并保留其他配置", async t => {
-  const root = await mkdtemp(join(tmpdir(), "ask-config-")); t.after(() => rm(root, { recursive: true, force: true }));
-  const path = join(root, "pi-ask.json");
+  const root = await mkdtemp(join(tmpdir(), "cardex-config-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const path = join(root, "pi-cardex.json");
   assert.equal((await loadConfig(path)).model, null);
   await updateConfig(path, { directory: join(root, "library") });
   await updateConfig(path, { model: { provider: "p", id: "family/model" } });
@@ -134,7 +134,7 @@ test("整批归类覆盖所有知识点，拒绝四级、环、无效引用与�
 });
 
 test("目录锁拒绝并发写入，操作失败后释放锁", async t => {
-  const root = await mkdtemp(join(tmpdir(), "ask-lock-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const root = await mkdtemp(join(tmpdir(), "cardex-lock-")); t.after(() => rm(root, { recursive: true, force: true }));
   await withLock(root, async () => { await assert.rejects(withLock(root, async () => 1), /正在写入/); });
   await assert.rejects(withLock(root, async () => { throw new Error("failure"); }), /failure/);
   assert.equal(await withLock(root, async () => 2), 2);

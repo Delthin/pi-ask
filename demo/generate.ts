@@ -11,7 +11,7 @@
  * - demo/site/discussions/demo-javascript.md、demo-closure-capture.md  两次示例讨论原文
  *
  * 节点、父子关系、语义关联、卡片正文、讨论问答和日期都写在本文件里，输出可重复生成。
- * 全部内容为预设的公开示例，不来自真实用户会话，也未经过 /ask 模型归档流程。
+ * 全部内容为预设的公开示例，不来自真实用户会话，也未经过 /card 模型归档流程。
  */
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -22,7 +22,7 @@ import type { KnowledgeEdge, KnowledgeIndex, KnowledgeNode } from "../src/types.
 
 const OUT = fileURLToPath(new URL("./site/", import.meta.url));
 const RECORD_ID = "demo-javascript";
-const LIBRARY_ID = "pi-ask-public-demo-v1";
+const LIBRARY_ID = "pi-cardex-public-demo-v1";
 const CREATED_AT = "2024-01-01T09:00:00.000Z";
 const UPDATED_AT = "2024-01-02T09:00:00.000Z";
 const DEMO_NOTE = "> 预设演示内容，不来自用户会话。";
@@ -308,7 +308,7 @@ function buildIndex(): KnowledgeIndex {
 async function brandAsDemo(htmlPath: string): Promise<void> {
   let html = await readFile(htmlPath, "utf8");
   const swaps: [RegExp, string][] = [
-    [/<title>知识图谱 · pi-ask<\/title>/, "<title>知识图谱示例 · pi-ask</title>"],
+    [/<title>知识图谱 · pi-cardex<\/title>/, "<title>知识图谱示例 · pi-cardex</title>"],
     [/<span class="brand-sub">知识图谱<\/span>/, '<span class="brand-sub">知识图谱示例</span>'],
     [/"libraryId":"[0-9a-f]{20}"/, `"libraryId":${JSON.stringify(LIBRARY_ID)}`],
     [/"generatedAt":"[^"]*"/, `"generatedAt":${JSON.stringify(SUPPLEMENT_AT)}`],

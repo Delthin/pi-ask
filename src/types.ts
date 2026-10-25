@@ -5,7 +5,7 @@ export interface ModelChoice {
   id: string;
 }
 
-export interface AskConfig {
+export interface CardexConfig {
   version: 1;
   directory: string;
   /** null follows the current chat model and reuses its context for organization. */

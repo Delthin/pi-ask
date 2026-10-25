@@ -1,10 +1,10 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { reusableConversation, type ConversationMessages } from "./context.ts";
-import type { AskConfig, ModelCall, TranscriptMessage } from "./types.ts";
+import type { CardexConfig, ModelCall, TranscriptMessage } from "./types.ts";
 
 type RequestContext = Parameters<ExtensionContext["modelRegistry"]["streamSimple"]>[1];
 
-export function modelCaller(ctx: ExtensionContext, config: AskConfig, signal: AbortSignal, organization?: { messages: TranscriptMessage[]; history?: ConversationMessages }): {
+export function modelCaller(ctx: ExtensionContext, config: CardexConfig, signal: AbortSignal, organization?: { messages: TranscriptMessage[]; history?: ConversationMessages }): {
   call: ModelCall;
   organizationCall: ModelCall;
   name: string;
@@ -12,7 +12,7 @@ export function modelCaller(ctx: ExtensionContext, config: AskConfig, signal: Ab
   contextWarning?: string;
 } {
   const model = config.model ? ctx.modelRegistry.find(config.model.provider, config.model.id) : ctx.model;
-  if (!model) throw new Error("整理模型不可用。请用 /ask model 选择已配置的模型。");
+  if (!model) throw new Error("整理模型不可用。请用 /card model 选择已配置的模型。");
   const name = `${model.provider}/${model.id}`;
   let history: ReturnType<typeof reusableConversation>;
   let contextWarning: string | undefined;
@@ -25,7 +25,7 @@ export function modelCaller(ctx: ExtensionContext, config: AskConfig, signal: Ab
     const controller = new AbortController();
     const abort = () => controller.abort(signal.reason ?? new Error("整理已取消。"));
     signal.addEventListener("abort", abort, { once: true });
-    const timeout = setTimeout(() => controller.abort(new Error("整理模型调用超时；记录仍在，可重试 /ask end。")), config.timeoutMs);
+    const timeout = setTimeout(() => controller.abort(new Error("整理模型调用超时；记录仍在，可重试 /card end。")), config.timeoutMs);
     let onAbort: () => void = () => {};
     try {
       const cancelled = new Promise<never>((_resolve, reject) => {
@@ -39,7 +39,7 @@ export function modelCaller(ctx: ExtensionContext, config: AskConfig, signal: Ab
       });
       const result = await Promise.race([response.result(), cancelled]);
       // Declarations can remain in a reused prefix, but this is a single model request, never an agent/tool loop.
-      if (result.content.some(block => block.type === "toolCall")) throw new Error(`整理模型 ${name} 请求了工具调用；调用未执行，请重试 /ask end。`);
+      if (result.content.some(block => block.type === "toolCall")) throw new Error(`整理模型 ${name} 请求了工具调用；调用未执行，请重试 /card end。`);
       if (result.stopReason !== "stop") throw new Error(`整理模型 ${name} 未完成输出（${result.stopReason}）。请检查模型设置或缩短本次讨论后重试。`);
       return result.content.filter(block => block.type === "text").map(block => block.text).join("\n");
     } finally {

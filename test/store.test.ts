@@ -8,7 +8,7 @@ import type { ArchiveInput } from "../src/store.ts";
 import type { KnowledgeIndex, KnowledgeNode, Routing } from "../src/types.ts";
 
 const stamp = "2026-01-01T00:00:00.000Z";
-const pendingFile = ".pi-ask-transaction.json";
+const pendingFile = ".pi-cardex-transaction.json";
 const noModel = async (): Promise<never> => { throw new Error("重复归档不能再调用模型"); };
 
 function input(id: string, title = "闭包"): ArchiveInput {
@@ -55,12 +55,12 @@ async function markdown(root: string, node: KnowledgeNode): Promise<string> {
 
 async function graph(root: string) {
   const html = await readFile(join(root, "index.html"), "utf8");
-  assert.doesNotMatch(html, /__PI_ASK_DATA__|\/\*PI_ASK_CSS\*\/|\/\*PI_ASK_JS\*\//);
-  return { html, data: JSON.parse(html.match(/<script id="ask-data" type="application\/json">([\s\S]*?)<\/script>/)![1]!) };
+  assert.doesNotMatch(html, /__PI_CARDEX_DATA__|\/\*PI_CARDEX_CSS\*\/|\/\*PI_CARDEX_JS\*\//);
+  return { html, data: JSON.parse(html.match(/<script id="cardex-data" type="application\/json">([\s\S]*?)<\/script>/)![1]!) };
 }
 
 test("多新知识卡和分组：前向引用、UUID、三级树与独立语义关系", async t => {
-  const root = await temp(t, "ask-multi-");
+  const root = await temp(t, "cardex-multi-");
   const item = input("r1");
   item.notes.push({ ...item.notes[0]!, id: "n2", title: "词法作用域", summary: "词法作用域规则" });
   const plan = routing(item);
@@ -97,7 +97,7 @@ test("多新知识卡和分组：前向引用、UUID、三级树与独立语义�
 });
 
 test("同次新增与追加：标题和父级保持，只替换本批目标的语义关系", async t => {
-  const root = await temp(t, "ask-append-");
+  const root = await temp(t, "cardex-append-");
   const index = emptyIndex();
   index.nodes = [group("g"), card("a", "g"), card("b"), card("c")];
   index.nodes[1]!.recordIds = ["old"];
@@ -131,7 +131,7 @@ test("同次新增与追加：标题和父级保持，只替换本批目标的�
 });
 
 test("同批 notes 合并：record 只记一次，问答按来源去重归属，不采用模型引文", async t => {
-  const root = await temp(t, "ask-sources-");
+  const root = await temp(t, "cardex-sources-");
   const item = input("sources");
   item.messages.push({ role: "user", text: "独立问题乙", timestamp: 3 }, { role: "assistant", text: "独立原文乙", model: "p/second", timestamp: 4, status: "aborted" });
   item.notes = [
@@ -169,7 +169,7 @@ test("同批 notes 合并：record 只记一次，问答按来源去重归属，
 });
 
 test("分组命中后提升为知识卡，ID、父级和已有子节点保持", async t => {
-  const root = await temp(t, "ask-promote-");
+  const root = await temp(t, "cardex-promote-");
   const index = emptyIndex(); index.nodes = [group("parent"), group("promote", "parent"), card("child", "promote")];
   await seed(root, index);
   const item = input("promoted"); const plan = routing(item); plan.targets[0]!.matchId = "promote"; plan.targets[0]!.parent = "existing:parent";
@@ -182,7 +182,7 @@ test("分组命中后提升为知识卡，ID、父级和已有子节点保持", 
 });
 
 test("v1 索引原地迁移、旧 record 去重；新写入 v2 不虚构历史讨论文件", async t => {
-  const root = await temp(t, "ask-migrate-");
+  const root = await temp(t, "cardex-migrate-");
   const oldNode = { id: "legacy", title: "旧卡", summary: "旧简介", file: "cards/legacy.md", createdAt: stamp, updatedAt: stamp, recordIds: ["historical"] };
   const old = { version: 1, revision: 4, updatedAt: stamp, nodes: [oldNode], edges: [] };
   await mkdir(join(root, "cards")); await writeFile(join(root, oldNode.file), "# 原始旧正文\n不应丢失");
@@ -202,7 +202,7 @@ test("v1 索引原地迁移、旧 record 去重；新写入 v2 不虚构历史�
 });
 
 test("模型格式错误、缺失卡片、来源越界均在写入前失败", async t => {
-  const root = await temp(t, "ask-invalid-");
+  const root = await temp(t, "cardex-invalid-");
   const index = emptyIndex(); index.nodes = [card("existing")]; await seed(root, index);
   const before = await readFile(join(root, "index.json"), "utf8");
   const oldBody = await readFile(join(root, "cards/existing.md"), "utf8");
@@ -253,7 +253,7 @@ test("parseIndex 校验三级、环、无父、路径、group/file、node 内 re
 });
 
 test("非法落盘索引拒绝读取且全部源文件保持不变", async t => {
-  const root = await temp(t, "ask-bad-index-");
+  const root = await temp(t, "cardex-bad-index-");
   const index = emptyIndex(); index.nodes = [group("g"), card("a", "g"), card("b", "a")]; await seed(root, index);
   const body = await readFile(join(root, "cards/a.md"), "utf8");
   for (const mutate of [
@@ -271,7 +271,7 @@ test("非法落盘索引拒绝读取且全部源文件保持不变", async t => 
 });
 
 test("非法路由的第四级、环在建立 WAL 前失败，现有正文不变", async t => {
-  const root = await temp(t, "ask-bad-plan-");
+  const root = await temp(t, "cardex-bad-plan-");
   const index = emptyIndex(); index.nodes = [group("root"), card("parent", "root"), card("leaf", "parent")]; await seed(root, index);
   const before = await readFile(join(root, "index.json"), "utf8");
   const body = await readFile(join(root, "cards/leaf.md"), "utf8");
@@ -286,7 +286,7 @@ test("非法路由的第四级、环在建立 WAL 前失败，现有正文不变
 
 test("旧 version1 WAL 在旧索引、卡片后和索引后均可重放并迁移", async t => {
   for (const stage of ["before", "card", "index"]) await t.test(stage, async st => {
-    const root = await temp(st, "ask-old-wal-");
+    const root = await temp(st, "cardex-old-wal-");
     const oldNode = { id: "legacy", title: "旧卡", summary: "旧简介", file: "cards/legacy.md", createdAt: stamp, updatedAt: stamp, recordIds: ["old"] };
     const current = { version: 1, revision: 1, updatedAt: stamp, nodes: [oldNode], edges: [] };
     const next = structuredClone(current); next.revision = 2; next.nodes[0]!.recordIds.push("recovered");
@@ -315,7 +315,7 @@ function multiFileTransaction() {
 }
 
 test("version2 WAL 多文件中途真实写入失败后重放，retry 返回全部卡片", async t => {
-  const root = await temp(t, "ask-wal-multi-");
+  const root = await temp(t, "cardex-wal-multi-");
   const tx = multiFileTransaction();
   await writeFile(join(root, "index.json"), JSON.stringify(emptyIndex()));
   await writeFile(join(root, pendingFile), JSON.stringify(tx));
@@ -336,7 +336,7 @@ test("version2 WAL 多文件中途真实写入失败后重放，retry 返回全�
 });
 
 test("version2 WAL 索引写入后 HTML 失败可恢复，已提交 revision 可重复重放", async t => {
-  const root = await temp(t, "ask-wal-html-");
+  const root = await temp(t, "cardex-wal-html-");
   const tx = multiFileTransaction();
   await writeFile(join(root, pendingFile), JSON.stringify(tx));
   await mkdir(join(root, "index.html"));
@@ -355,7 +355,7 @@ test("version2 WAL 索引写入后 HTML 失败可恢复，已提交 revision 可
 });
 
 test("WAL 危险路径、重复文件与 revision 冲突在任何文件写入前拒绝", async t => {
-  const root = await temp(t, "ask-wal-invalid-");
+  const root = await temp(t, "cardex-wal-invalid-");
   const current = emptyIndex(); current.revision = 5;
   const raw = JSON.stringify(current); await writeFile(join(root, "index.json"), raw);
   const invalid = multiFileTransaction(); invalid.index.revision = 6;
@@ -373,7 +373,7 @@ test("WAL 危险路径、重复文件与 revision 冲突在任何文件写入前
 });
 
 test("HTML 安全嵌入无损原文，libraryId 稳定且分组为空正文", async t => {
-  const root = await temp(t, "ask-html-");
+  const root = await temp(t, "cardex-html-");
   const index = emptyIndex(); index.nodes = [group("g"), card("safe", "g")]; await seed(root, index);
   const content = '</script><script>globalThis.pwned=1</script> $& $` < > & \u2028 \u2029';
   await writeFile(join(root, "cards/safe.md"), content);
@@ -387,7 +387,7 @@ test("HTML 安全嵌入无损原文，libraryId 稳定且分组为空正文", as
 });
 
 test("空知识库可生成浏览页，不改变知识索引", async t => {
-  const root = await temp(t, "ask-empty-");
+  const root = await temp(t, "cardex-empty-");
   await rebuildGraph(root);
   assert.equal((await graph(root)).data.version, 2);
   assert.equal((await loadIndex(root)).nodes.length, emptyIndex().nodes.length);

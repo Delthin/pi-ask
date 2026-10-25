@@ -8,7 +8,7 @@ import { MAX_KNOWLEDGE_DEPTH } from "./types.ts";
 import type { KnowledgeIndex, KnowledgeNode, ModelCall, NodeRef, OrganizedNote, Routing, TranscriptMessage } from "./types.ts";
 
 const INDEX = "index.json";
-const PENDING = ".pi-ask-transaction.json";
+const PENDING = ".pi-cardex-transaction.json";
 const validId = (id: unknown): id is string => typeof id === "string" && /^[a-zA-Z0-9_-]{1,160}$/.test(id);
 const nonempty = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);

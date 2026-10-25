@@ -1,14 +1,14 @@
-# pi-ask
+# pi-cardex
 
-[English](https://github.com/Delthin/pi-ask#readme) · 简体中文
+[English](https://github.com/Delthin/pi-cardex#readme) · 简体中文
 
-pi-ask 将 Pi 中的讨论整理成保存在本地的 Markdown 知识卡片。用 `/ask` 开始讨论，继续追问，再用 `/ask end` 归档。插件按知识点拆分内容，将同一知识点补充到已有卡片，并维护最多三级的知识树。离线 HTML 页面提供树状导航、知识点之间的关联，以及卡片阅读。
+pi-cardex 将 Pi 中的讨论整理成保存在本地的 Markdown 知识卡片。用 `/card` 开始讨论，继续追问，再用 `/card end` 归档。插件按知识点拆分内容，将同一知识点补充到已有卡片，并维护最多三级的知识树。离线 HTML 页面提供树状导航、知识点之间的关联，以及卡片阅读。
 
 ## 看看效果
 
-[打开交互 demo](https://delthin.github.io/pi-ask/) · [下载离线 demo](https://github.com/Delthin/pi-ask/releases/download/v0.3.0/pi-ask-demo.zip)
+[打开交互 demo](https://delthin.github.io/pi-cardex/) · [下载离线 demo](https://github.com/Delthin/pi-cardex/releases/download/v0.4.0/pi-cardex-demo.zip)
 
-[![pi-ask 示例：三级知识树、语义关联和 Markdown 卡片](https://raw.githubusercontent.com/Delthin/pi-ask/main/demo/preview.png)](https://delthin.github.io/pi-ask/)
+[![pi-cardex 示例：三级知识树、语义关联和 Markdown 卡片](https://raw.githubusercontent.com/Delthin/pi-cardex/main/demo/preview.png)](https://delthin.github.io/pi-cardex/)
 
 demo 使用预设的 JavaScript 知识卡片。选择「闭包」，可以看到「JavaScript → 词法作用域 → 闭包」这条路径，以及它与垃圾回收、Promise 回调的关联。右侧以两次归档演示基础解释和后续补充，原始问答可展开核对。左侧知识树可以折叠和搜索，中央图谱可以拖拽和缩放。demo 完全在浏览器中运行。
 
@@ -17,17 +17,17 @@ demo 使用预设的 JavaScript 知识卡片。选择「闭包」，可以看到
 需要 Node.js 22.6 或更新版本，以及提供 `modelRegistry.streamSimple()` 的 Pi 宿主。插件按 `@earendil-works/pi-coding-agent` 1.2.0 的接口实现。
 
 ```sh
-pi install npm:@delthin/pi-ask
+pi install npm:@delthin/pi-cardex
 ```
 
 重启 Pi，或在已有会话中执行 `/reload`。设置归档目录后，开始提问：
 
 ```text
-/ask dir ~/journal/ask
-/ask JavaScript 的闭包是什么？先讲词法作用域，再给一个例子。
+/card dir ~/journal/cardex
+/card JavaScript 的闭包是什么？先讲词法作用域，再给一个例子。
 ```
 
-等 Pi 回答后，正常追问即可，也可以继续使用 `/ask`：
+等 Pi 回答后，正常追问即可，也可以继续使用 `/card`：
 
 ```text
 它和垃圾回收有什么关系？Promise 回调也会用到闭包吗？
@@ -36,8 +36,8 @@ pi install npm:@delthin/pi-ask
 讨论结束后，归档并查看图谱地址：
 
 ```text
-/ask end
-/ask graph
+/card end
+/card graph
 ```
 
 用浏览器打开提示中的 `index.html` 地址。一段讨论可以同时新建多张卡片、补充已有卡片，具体结果取决于实际讨论的知识点。每张卡片保留解释、相关例子和问答，并链接到完整讨论。
@@ -50,39 +50,39 @@ pi install npm:@delthin/pi-ask
 
 「完整 Markdown」展示整张卡片，下载也保留完整原文件。旧格式或经过手工修改、无法可靠识别批次的卡片会完整显示原文。阅读分段在本地生成 HTML 时完成，不调用模型，也不改写卡片或索引；这项功能帮助回看和核对，内容之间的重复或冲突仍需结合原文判断。
 
-升级后运行 `/ask graph`，刷新已有 HTML，即可使用新的阅读视图。
+升级后运行 `/card graph`，刷新已有 HTML，即可使用新的阅读视图。
 
-也可以通过 `pi install git:github.com/Delthin/pi-ask@v0.3.0` 安装 GitHub 标签版本；本地开发使用 `pi install /绝对路径/pi-ask`。
+也可以通过 `pi install git:github.com/Delthin/pi-cardex@v0.4.0` 安装 GitHub 标签版本；本地开发使用 `pi install /绝对路径/pi-cardex`。
 
 ## 命令
 
 | 命令 | 用途 |
 | --- | --- |
-| `/ask 问题` | 开始记录一段讨论；已有记录时继续追问 |
-| `/ask end` | 拆分知识点，补充或新建卡片，更新知识树、关联和 HTML |
-| `/ask cancel` | 结束记录，保留聊天内容 |
-| `/ask model` | 从 Pi 可用模型中选择默认整理模型 |
-| `/ask model current` | 将当前聊天模型固定为整理模型 |
-| `/ask model follow` | 跟随聊天模型，整理时复用会话上下文 |
-| `/ask model provider/model-id` | 指定 Pi 中已经配置的整理模型 |
-| `/ask dir /绝对路径` | 设置归档目录，也支持 `~/` |
-| `/ask status` | 查看记录状态、归档目录、整理模型和配置路径 |
-| `/ask graph` | 重新生成离线图谱，显示文件地址 |
-| `/ask help` | 查看命令说明 |
-| `/ask -- 问题` | 问题以 `end`、`model` 等命令词开头时使用 |
+| `/card 问题` | 开始记录一段讨论；已有记录时继续追问 |
+| `/card end` | 拆分知识点，补充或新建卡片，更新知识树、关联和 HTML |
+| `/card cancel` | 结束记录，保留聊天内容 |
+| `/card model` | 从 Pi 可用模型中选择默认整理模型 |
+| `/card model current` | 将当前聊天模型固定为整理模型 |
+| `/card model follow` | 跟随聊天模型，整理时复用会话上下文 |
+| `/card model provider/model-id` | 指定 Pi 中已经配置的整理模型 |
+| `/card dir /绝对路径` | 设置归档目录，也支持 `~/` |
+| `/card status` | 查看记录状态、归档目录、整理模型和配置路径 |
+| `/card graph` | 重新生成离线图谱，显示文件地址 |
+| `/card help` | 查看命令说明 |
+| `/card -- 问题` | 问题以 `end`、`model` 等命令词开头时使用 |
 
-归档会等待当前回答结束。请等 `/ask` 的处理提示完成后再提交新消息；处理中提交的文字会退回编辑框，需要重新发送。
+归档会等待当前回答结束。请等 `/card` 的处理提示完成后再提交新消息；处理中提交的文字会退回编辑框，需要重新发送。
 
 ## 模型与配置
 
-聊天回答使用 Pi 当前模型。整理模型复用 Pi 中已有的模型配置和认证，通过 `/ask model` 选择。初始默认值为 **follow**：跟随聊天模型，在当前会话上下文末尾追加整理提示。
+聊天回答使用 Pi 当前模型。整理模型复用 Pi 中已有的模型配置和认证，通过 `/card model` 选择。初始默认值为 **follow**：跟随聊天模型，在当前会话上下文末尾追加整理提示。
 
-第一次修改模型或目录时，插件会保存配置。默认文件为 `~/.pi/agent/pi-ask.json`；使用自定义 Pi agent 目录时，配置文件位于该目录下。运行 `/ask status` 可以看到实际路径。也可以手动编辑配置文件：
+第一次修改模型或目录时，插件会保存配置。默认文件为 `~/.pi/agent/pi-cardex.json`；使用自定义 Pi agent 目录时，配置文件位于该目录下。运行 `/card status` 可以看到实际路径。也可以手动编辑配置文件：
 
 ```json
 {
   "version": 1,
-  "directory": "~/journal/ask",
+  "directory": "~/journal/cardex",
   "model": null,
   "timeoutMs": 120000
 }
@@ -90,20 +90,20 @@ pi install npm:@delthin/pi-ask
 
 将 `model` 设为 `{ "provider": "你的-provider", "id": "你的-model-id" }` 可固定整理模型。`timeoutMs` 是每次模型请求的超时，允许范围为 1000–600000 毫秒。
 
-归档目录独立于 Pi 的启动目录。一段讨论沿用开始时的归档目录；中途运行 `/ask dir` 设置的是下一段讨论的默认目录，已有文件仍在原处。
+归档目录独立于 Pi 的启动目录。一段讨论沿用开始时的归档目录；中途运行 `/card dir` 设置的是下一段讨论的默认目录，已有文件仍在原处。
 
 ### 上下文复用与缓存
 
 跟随模式复用最近一次请求的消息、系统提示和工具声明，续接最后回答，再在末尾加入整理提示。新增提示通过消息位置限定本次归档范围，因此无需重复附上问答文字。重新加载后，插件从当前会话的有效消息历史恢复上下文；如果压缩等操作已移除本次讨论的部分内容，插件会提示改用原始问答快照整理。
 
-保留请求前缀有助于复用模型服务的输入缓存。实际命中取决于服务端、缓存有效期，以及其他扩展对请求的修改。未命中时，发送完整会话会比单独发送本次讨论消耗更多输入 token。固定模型，包括 `/ask model current`，则在独立上下文中整理本次讨论。
+保留请求前缀有助于复用模型服务的输入缓存。实际命中取决于服务端、缓存有效期，以及其他扩展对请求的修改。未命中时，发送完整会话会比单独发送本次讨论消耗更多输入 token。固定模型，包括 `/card model current`，则在独立上下文中整理本次讨论。
 
 ## 文件与整理过程
 
-默认归档位置为 `~/journal/ask/`：
+默认归档位置为 `~/journal/cardex/`：
 
 ```text
-~/journal/ask/
+~/journal/cardex/
 ├── index.json          # 名称、简介、层级、卡片路径、讨论来源和语义关联
 ├── index.html          # 内嵌全部卡片的离线知识树与图谱
 ├── cards/
@@ -120,11 +120,11 @@ pi install npm:@delthin/pi-ask
 
 ### 卡片内容与语言
 
-[知识卡片写作提示](https://github.com/Delthin/pi-ask/blob/main/src/prompts/knowledge-card.md) 引导整理模型补足学习所需的背景，结合机制与例子解释知识点，并保留有实际意义的条件和不确定性。可以修改这份提示文件，下次整理会读取新内容。程序将原始问答与模型整理出的解释分别保存。
+[知识卡片写作提示](https://github.com/Delthin/pi-cardex/blob/main/src/prompts/knowledge-card.md) 引导整理模型补足学习所需的背景，结合机制与例子解释知识点，并保留有实际意义的条件和不确定性。可以修改这份提示文件，下次整理会读取新内容。程序将原始问答与模型整理出的解释分别保存。
 
 卡片默认使用中文。在本次讨论中明确要求其他产物语言后，整理时会采用该语言。浏览界面和命令提示目前使用中文。
 
-记录范围是当前会话分支中，从 `/ask` 开始到 `/ask end` 的讨论。卡片保留回答模型名称与可见问答文字；中断、报错或达到长度限制的回答保留已生成部分，并标注状态。图片以附件提示代替，工具结果和模型思考过程不写入卡片。背景摘要可保留理解知识点所需的信息；固定模型模式下，需要在本次讨论中补充所依赖的更早背景。
+记录范围是当前会话分支中，从 `/card` 开始到 `/card end` 的讨论。卡片保留回答模型名称与可见问答文字；中断、报错或达到长度限制的回答保留已生成部分，并标注状态。图片以附件提示代替，工具结果和模型思考过程不写入卡片。背景摘要可保留理解知识点所需的信息；固定模型模式下，需要在本次讨论中补充所依赖的更早背景。
 
 重新打开同一会话可以继续未完成的记录。会话压缩不改变可归档的原始问答，分支各自归档所属消息。重复提交同一归档记录会去重。
 
@@ -138,13 +138,13 @@ pi install npm:@delthin/pi-ask
 
 ## 失败恢复与备份
 
-模型超时、不可用或返回格式错误时，记录仍然保留。可以按需更换整理模型，再运行 `/ask end` 重试。
+模型超时、不可用或返回格式错误时，记录仍然保留。可以按需更换整理模型，再运行 `/card end` 重试。
 
-写入归档文件之前，插件会固定本次问答快照。即使卡片已经保存、会话中的完成标记尚未写入，重试也会识别已有记录。归档待重试时，先执行 `/ask end` 重试，或用 `/ask cancel` 结束记录，再开始追问。取消会保留已经落盘的卡片。
+写入归档文件之前，插件会固定本次问答快照。即使卡片已经保存、会话中的完成标记尚未写入，重试也会识别已有记录。归档待重试时，先执行 `/card end` 重试，或用 `/card cancel` 结束记录，再开始追问。取消会保留已经落盘的卡片。
 
-一次归档的全部卡片、完整讨论和索引，由同一个 `.pi-ask-transaction.json` 事务文件记录，完成后自动移除。程序中断后，下次访问知识库会先恢复待完成的事务。断电时的持久性取决于操作系统和文件系统；Windows 下跳过目录同步。备份应复制整个归档目录，其中若有事务文件，也一并保留。
+一次归档的全部卡片、完整讨论和索引，由同一个 `.pi-cardex-transaction.json` 事务文件记录，完成后自动移除。程序中断后，下次访问知识库会先恢复待完成的事务。断电时的持久性取决于操作系统和文件系统；Windows 下跳过目录同步。备份应复制整个归档目录，其中若有事务文件，也一并保留。
 
-`.pi-ask.lock` 防止并发写入。另一个 Pi 进程正在写入时，稍后重试即可。进程异常退出留下锁时，错误提示会给出路径；确认该知识库没有活跃写入进程后，移除残留锁再重试。索引或卡片缺失、损坏时，需要从备份恢复相应文件。
+`.pi-cardex.lock` 防止并发写入。另一个 Pi 进程正在写入时，稍后重试即可。进程异常退出留下锁时，错误提示会给出路径；确认该知识库没有活跃写入进程后，移除残留锁再重试。索引或卡片缺失、损坏时，需要从备份恢复相应文件。
 
 ## 开发与发布
 
@@ -159,7 +159,7 @@ npm test
 
 `demo/` 保存预设数据、生成脚本和预览截图。修改演示数据后运行 `npm run demo`，再用浏览器打开 `demo/site/index.html`。生成脚本只写入列出的示例文件；提交生成结果后，GitHub Pages 工作流会更新在线 demo。
 
-npm 包名为 **`@delthin/pi-ask`**，包含 `src/`、`web/` 和中英文 README，演示文件与开发测试留在仓库中。`pi-package` 关键词供 [Pi 插件目录](https://pi.dev/packages) 发现包，清单同时提供扩展入口与预览图。收录和安装机制见 [Pi 包文档](https://pi.dev/docs/latest/packages)。
+npm 包名为 **`@delthin/pi-cardex`**，包含 `src/`、`web/` 和中英文 README，演示文件与开发测试留在仓库中。`pi-package` 关键词供 [Pi 插件目录](https://pi.dev/packages) 发现包，清单同时提供扩展入口与预览图。收录和安装机制见 [Pi 包文档](https://pi.dev/docs/latest/packages)。
 
 发布新版本时，先更新 `package.json` 和 `package-lock.json` 中的版本，完成相关检查，再使用有权向 `@delthin` 发布的 npm 账号，在仓库根目录执行：
 
